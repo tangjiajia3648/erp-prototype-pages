@@ -21,6 +21,11 @@
           UPLOAD_API_URL: '/syy/file/files/view/',
         },
       }
+
+      // 该仓库仅用于分享原型一，未指定页面时直接进入原型预览。
+      if (!window.location.hash) {
+        window.location.hash = '/preview/budget-interaction-v2'
+      }
     </script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
