@@ -1,1 +1,0 @@
-import t from"./index-CuwbtS8D.js";import{L as e,O as o}from"./vendor-3qnd2h3j.js";import"./element-_NCEjcwy.js";import"./index-DeW4_FV-.js";const _={__name:"index",setup(r){return(a,p)=>(e(),o(t,{"prototype-variant":"flow-template"}))}};export{_ as default};

@@ -1,1 +1,0 @@
-const a=[{value:1,label:"公司模板"},{value:2,label:"厂商总代模板"},{value:3,label:"其他公司模板"}];a.reduce((l,e)=>(l[e.value]=e,l),{});const u=[{value:1,label:"总部"},{value:2,label:"分公司"},{value:3,label:"事业部"}];u.reduce((l,e)=>(l[e.value]=e,l),{});export{a as F,u as R};

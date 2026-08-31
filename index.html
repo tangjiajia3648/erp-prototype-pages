@@ -1,58 +1,14 @@
-<!DOCTYPE html>
-<html lang="zh-cmn-Hans">
+<!doctype html>
+<html lang="zh-CN">
   <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1,IE=edge" />
-    <meta name="renderer" content="webkit" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>加载中...| 商易云</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ERP 预算、合同与订单交互原型" />
     <link rel="icon" href="./favicon.ico" />
-    <script>
-      window.__SITE_CONFIG = {
-        NAME: '商易云',
-        VERSION: '0.0.1',
-        SUPPORT_NAME: '四川科瑞责任有限公司',
-        SUPPORT_URL: 'http://keywaysoft.com',
-        SETTINGS: {
-          BASE_URL: '/',
-          ROUTER_MODE: 'hash',
-          API_URI: '/syy',
-          AUTH_API_URI: '/auth',
-          UPLOAD_API_URL: '/syy/file/files/view/',
-        },
-      }
-
-      // 该仓库仅用于分享原型一，未指定页面时直接进入原型预览。
-      if (!window.location.hash) {
-        window.location.hash = '/preview/budget-interaction-v2'
-      }
-    </script>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body, #app { width: 100%; height: 100%; }
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
-      .flash-screen-loading { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; }
-      .splash-loader { animation: splash-rotate 1s linear infinite; }
-      @keyframes splash-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      .splash-path { stroke: #1890ff; stroke-dasharray: 90, 150; stroke-dashoffset: 0; animation: splash-dash 1.5s ease-in-out infinite; }
-      @keyframes splash-dash { 0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; } 50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; } 100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; } }
-      .flash-screen-loading p { margin-top: 12px; color: #667685; font-size: 14px; text-align: center; }
-    </style>
-    <script type="module" crossorigin src="./static/index-DeW4_FV-.js"></script>
-    <link rel="modulepreload" crossorigin href="./static/vendor-3qnd2h3j.js">
-    <link rel="modulepreload" crossorigin href="./static/element-_NCEjcwy.js">
-    <link rel="stylesheet" crossorigin href="./static/index-DsknBefb.css">
+    <title>原型一｜预算、合同与订单</title>
   </head>
   <body>
-    <div id="app">
-      <div class="flash-screen-loading">
-        <div>
-          <svg class="splash-loader" width="50px" height="50px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-            <circle class="splash-path" fill="none" stroke-width="5" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
-          </svg>
-          <p>正在加载中, 请稍后...</p>
-        </div>
-      </div>
-    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
