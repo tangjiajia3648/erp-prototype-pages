@@ -1844,6 +1844,12 @@
                 ><span>制单时间：{{ documentData.created }}</span
                 ><span>最后更新：2026-08-24 16:08</span>
               </p>
+              <div v-if="mode === 'detail'" class="budget-detail-title-summary">
+                <div><span>预计销售收入</span><strong>{{ documentData.revenue || '¥328,000.00' }}</strong></div>
+                <div><span>预计采购成本</span><strong>¥271,000.00</strong></div>
+                <div><span>预计毛利</span><strong class="positive">¥57,000.00</strong></div>
+                <div><span>预计毛利率</span><strong class="positive">{{ documentData.margin || '18.42%' }}</strong></div>
+              </div>
             </div>
             <div
               v-if="mode === 'detail'"
@@ -4085,6 +4091,13 @@
                   : "先选择业务类型，系统将自动匹配可用的创建方式和关联单据"
               }}
             </p>
+            <div v-if="orderPageReadonly" class="order-title-summary">
+              <div><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
+              <div><span>账期</span><strong>{{ orderDraft.billTime }}天</strong></div>
+              <div><span>{{ orderDraft.partyLabel }}</span><b :title="orderDraft.partyName">{{ orderDraft.partyName }}</b></div>
+              <div><span>业务类型</span><b>{{ orderBusinessTypeDisplay }}</b></div>
+              <div><span>订单状态</span><b>{{ activeOrderPage.orderPageMode === 'audit' ? '审批中' : '待履约' }}</b></div>
+            </div>
           </div>
         </header>
         <div
@@ -4122,13 +4135,10 @@
               ><el-row :gutter="16"
                 ><el-col v-if="showOrderBudget" :span="6"
                   ><el-form-item label="关联预算单" :required="orderDraft.creationMethod === 'budget_later'"
-                    ><div v-if="orderDraft.entrySource !== 'list' || orderPageReadonly || orderDraft.creationMethod === 'contract'" class="order-readonly-value link-value">{{ orderDraft.budgetCode || '由合同自动带出' }}</div
-                    ><el-input v-else v-model="orderDraft.budgetCode" placeholder="请选择预算单" /></el-form-item></el-col
-                ><el-col v-if="showOrderSaleSource" :span="6"><el-form-item label="关联销售订单" required
-                    ><div v-if="orderPageReadonly" class="order-readonly-value link-value">{{ orderDraft.saleOrderCode }}</div><el-input v-else v-model="orderDraft.saleOrderCode" placeholder="请选择销售订单" /></el-form-item></el-col
+                    ><el-input v-model="orderDraft.budgetCode" :readonly="orderPageReadonly || orderDraft.entrySource !== 'list' || orderDraft.creationMethod === 'contract'" :placeholder="orderDraft.creationMethod === 'contract' ? '由合同自动带出' : '请输入或选择预算单'" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.budgetCode" type="primary">查看</el-link></template></el-input
+                    ><div v-if="!orderPageReadonly && orderDraft.budgetCode" class="field-assist-text">预算内容已复制到当前订单；订单内调整不会修改原预算单。</div></el-form-item></el-col
                 ><el-col v-if="showOrderContract" :span="6"><el-form-item label="关联合同" required
-                    ><div v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" class="order-readonly-value link-value">{{ orderDraft.contractCode || '合同审批后生成' }}</div
-                    ><el-input v-else v-model="orderDraft.contractCode" placeholder="请选择已生效合同" /></el-form-item></el-col
+                    ><el-input v-model="orderDraft.contractCode" :readonly="orderPageReadonly || orderDraft.entrySource !== 'list'" placeholder="请输入或选择已生效合同" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.contractCode" type="primary">查看</el-link></template></el-input></el-form-item></el-col
                 ><el-col :span="6"><el-form-item label="单据来源"><div class="order-readonly-value">{{ orderEntrySourceLabel }}</div></el-form-item></el-col
                 ><el-col v-if="showProjectFollowup" :span="6"><el-form-item label="是否属于项目后运行单"><el-switch v-model="orderDraft.projectFollowup" :disabled="orderPageReadonly" /></el-form-item></el-col
                 ><el-col v-if="showCapitalOccupied" :span="6"><el-form-item label="是否占用资金" required><el-switch v-model="orderDraft.capitalOccupied" :disabled="orderPageReadonly" /></el-form-item></el-col
@@ -4206,7 +4216,7 @@
                 orderDraft.type === 'purchase' ? '到货与结算' : '收货与交付'
               "
             /><el-form label-position="top"><div class="subsection-heading">{{ orderDraft.type === 'purchase' ? '到货信息' : '收货信息' }}</div
-              ><el-row :gutter="16"
+              ><el-row :gutter="16" class="order-field-grid"
                 ><template v-if="orderDraft.type === 'sale'"
                   ><el-col :span="6"
                     ><el-form-item label="收货地址" required
@@ -4240,7 +4250,7 @@
                   ><el-col :span="8"
                     ><el-form-item label="进项发票预计收回日期"
                       ><el-date-picker v-model="orderDraft.invoiceReturnDate" :disabled="orderPageReadonly" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col></template></el-row
-              ><div class="subsection-heading">{{ orderDraft.type === 'purchase' ? '付款与结算' : '收款与开票' }}</div><el-row :gutter="16"
+              ><div class="subsection-heading">{{ orderDraft.type === 'purchase' ? '付款与结算' : '收款与开票' }}</div><el-row :gutter="16" class="order-field-grid order-settlement-grid"
                 ><template v-if="orderDraft.type === 'purchase'"><el-col :span="6"><el-form-item label="价保使用"
                       ><el-input-number
                         v-model="orderDraft.priceProtection"
@@ -4260,8 +4270,8 @@
             id="order-attachments"
             class="section-card order-attachments-section"
           >
-            <SectionTitle :number="showGeneratedSaleContract ? '06' : '05'" title="附件与说明" /><el-row :gutter="20"
-              ><el-col :span="12"
+            <SectionTitle :number="showGeneratedSaleContract ? '06' : '05'" title="附件与说明" /><div class="order-attachments-stack"
+              ><div
                 ><el-form label-position="top"
                   ><el-form-item label="备注"
                     ><el-input
@@ -4270,14 +4280,14 @@
                       :disabled="orderPageReadonly"
                       :rows="2"
                       maxlength="500"
-                      show-word-limit /></el-form-item></el-form></el-col
-              ><el-col :span="12"
-                ><el-upload v-if="!orderPageReadonly" drag action="#" :auto-upload="false"
+                      show-word-limit /></el-form-item></el-form></div
+              ><div
+                ><el-upload v-if="!orderPageReadonly" drag action="#" :auto-upload="false" :limit="10" :file-list="orderAttachmentFiles"
                   ><Upload />
                   <div>点击或拖拽上传附件</div>
-                  <small>最多5个文件</small></el-upload><div v-else class="order-file-summary"><Document /> 订单附件.pdf <el-link type="primary">预览</el-link></div
-                ></el-col
-              ></el-row
+                  <small>最多10个文件，支持长文件名和多附件展示</small></el-upload><div v-else class="order-file-list"><div v-for="file in orderAttachmentFiles" :key="file.uid" class="order-file-summary"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.sizeLabel }}</small><el-link type="primary">预览</el-link></div></div
+                ></div
+              ></div
             >
           </article>
           <div
@@ -4363,7 +4373,7 @@
             </div>
           </footer>
         </div>
-        <aside :class="['contract-side-directory', 'order-side-directory', { collapsed: orderWorkbenchCollapsed }]">
+        <aside v-if="activeOrderPage.orderPageMode !== 'detail'" :class="['contract-side-directory', 'order-side-directory', { collapsed: orderWorkbenchCollapsed }]">
           <button class="workbench-boundary-toggle" :title="orderWorkbenchCollapsed ? '展开右侧工作台' : '收起右侧工作台'" @click="orderWorkbenchCollapsed = !orderWorkbenchCollapsed">
             <span>{{ orderWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="orderWorkbenchCollapsed">2</em>
           </button>
@@ -5178,7 +5188,6 @@ const orderDraft = reactive({
   businessType: "产品导向分销",
   creationMethod: "contract",
   budgetCode: "",
-  saleOrderCode: "XSDD-202608-02816",
   contractCode: "",
   partyLabel: "客户",
   partyName: "成都星海科技有限公司",
@@ -5198,7 +5207,7 @@ const orderDraft = reactive({
   priceProtection: 0,
   discount: 0,
   autoSettlement: true,
-  autoPaymentDraft: false,
+  autoPaymentDraft: true,
   autoReceiptNotice: true,
   projectFollowup: false,
   supplierOrderCode: "",
@@ -5221,6 +5230,20 @@ const orderDraft = reactive({
 const orderScrollArea = ref();
 const currentOrderModule = ref("order-basic");
 const orderWorkbenchCollapsed = ref(false);
+const orderAttachmentFiles = ref([
+  {
+    uid: "order-attachment-1",
+    name: "销售订单商务条款及客户收货要求确认附件（含补充说明与签收约定）.pdf",
+    status: "success",
+    sizeLabel: "2.8 MB",
+  },
+  {
+    uid: "order-attachment-2",
+    name: "合同附件.pdf",
+    status: "success",
+    sizeLabel: "860 KB",
+  },
+]);
 const confirmedOrderBusinessType = ref("产品导向分销");
 const confirmedOrderCreationMethod = ref("contract");
 const budgetChangePanels = ref([]);
@@ -6129,9 +6152,6 @@ const showOrderBudget = computed(() =>
     ? ["budget_later", "contract"].includes(orderDraft.creationMethod) || !!orderDraft.budgetCode
     : orderDraft.businessType === "产品导向分销" || !!orderDraft.budgetCode,
 );
-const showOrderSaleSource = computed(() =>
-  orderDraft.type === "purchase" && ["订单导向分销", "FA-以销定采", "FA-囤货分销"].includes(orderDraft.businessType),
-);
 const showProjectFollowup = computed(() => orderDraft.businessType === "订单导向分销");
 const showCapitalOccupied = computed(() => ["FA-以销定采", "FA-囤货分销", "B类"].includes(orderDraft.businessType));
 const orderContractHandlingText = computed(() => {
@@ -6613,7 +6633,6 @@ function openManualOrder(type) {
     businessType: "订单导向分销",
     creationMethod: "contract",
     budgetCode: "",
-    saleOrderCode: type === "purchase" ? "XSDD-202608-02816" : "",
     contractCode: "",
     partyLabel: type === "purchase" ? "供应商" : "客户",
     partyName: type === "purchase" ? "四川智联商贸有限公司" : "成都星海科技有限公司",
@@ -6624,7 +6643,7 @@ function openManualOrder(type) {
     purchaseOwner: "当前用户",
     department: type === "purchase" ? "采购部" : "销售部",
     autoSettlement: true,
-    autoPaymentDraft: false,
+    autoPaymentDraft: true,
     autoReceiptNotice: true,
     prepaymentAllocated: 0,
     contractSituation: "generated",
@@ -6664,7 +6683,6 @@ async function handleOrderBusinessTypeChange() {
   confirmedOrderCreationMethod.value = orderDraft.creationMethod;
   orderDraft.contractCode = "";
   orderDraft.budgetCode = "";
-  if (!showOrderSaleSource.value) orderDraft.saleOrderCode = "";
   ElMessage.info("已根据业务类型更新创建方式和关联字段");
 }
 async function handleOrderCreationMethodChange() {
@@ -6716,7 +6734,6 @@ function openOrderDetail(row, type) {
     creationMethod: row.contractCode && row.contractCode !== "-" ? "contract" : "no_contract",
     budgetCode: row.budgetCode === "-" ? "" : row.budgetCode,
     contractCode: row.contractCode === "-" ? "" : row.contractCode,
-    saleOrderCode: type === "purchase" ? "XSDD-202608-02816" : "",
     partyLabel: type === "purchase" ? "供应商" : "客户",
     partyName: row.supplier || row.customer,
     ownerLabel: type === "purchase" ? "采购责任人" : "销售责任人",
@@ -11523,6 +11540,74 @@ onMounted(() => {
 .order-edit-page > .document-header h1 {
   font-size: 18px;
 }
+.order-title-summary {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.35fr) minmax(110px, 0.7fr) minmax(180px, 1.2fr) minmax(150px, 1fr) minmax(110px, 0.7fr);
+  gap: 0;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid #dce5ef;
+  border-radius: 5px;
+  background: #fff;
+}
+.order-title-summary > div {
+  min-width: 0;
+  padding: 8px 14px;
+  border-right: 1px solid #e7edf3;
+}
+.order-title-summary > div:last-child {
+  border-right: 0;
+}
+.order-title-summary span {
+  display: block;
+  margin-bottom: 3px;
+  color: #83909d;
+  font-size: 12px;
+}
+.order-title-summary strong,
+.order-title-summary b {
+  display: block;
+  overflow: hidden;
+  color: #263442;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.order-title-summary strong {
+  color: #1677d2;
+  font-size: 17px;
+}
+.budget-detail-title-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 0;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid #dce5ef;
+  border-radius: 5px;
+  background: #fff;
+}
+.budget-detail-title-summary > div {
+  min-width: 0;
+  padding: 8px 14px;
+  border-right: 1px solid #e7edf3;
+}
+.budget-detail-title-summary > div:last-child {
+  border-right: 0;
+}
+.budget-detail-title-summary span {
+  display: block;
+  margin-bottom: 3px;
+  color: #83909d;
+  font-size: 12px;
+}
+.budget-detail-title-summary strong {
+  color: #263442;
+  font-size: 16px;
+}
+.budget-detail-title-summary strong.positive {
+  color: #0f9f75;
+}
 .order-edit-page > .order-document-scroll {
   box-sizing: border-box;
   margin-right: 300px;
@@ -11680,6 +11765,39 @@ onMounted(() => {
   font-weight: 600;
   line-height: 22px;
 }
+.order-field-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 16px;
+}
+.order-field-grid::before,
+.order-field-grid::after {
+  display: none;
+}
+.order-field-grid > [class*="el-col-"] {
+  width: auto;
+  max-width: none !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  flex: none !important;
+}
+.order-field-grid :deep(.el-form-item__content) {
+  min-width: 0;
+  align-items: center;
+}
+.order-field-grid :deep(.el-switch) {
+  min-height: 32px;
+}
+.field-assist-text {
+  width: 100%;
+  margin-top: 5px;
+  color: #8795a3;
+  font-size: 12px;
+  line-height: 18px;
+}
+.linked-document-input :deep(.el-input__suffix) {
+  white-space: nowrap;
+}
 .order-readonly-value,
 .order-result-value {
   box-sizing: border-box;
@@ -11731,6 +11849,11 @@ onMounted(() => {
 .order-edit-page .order-attachments-section {
   padding-bottom: 8px;
 }
+.order-attachments-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
 .order-edit-page .order-attachments-section :deep(.el-form-item) {
   margin-bottom: 4px;
 }
@@ -11754,6 +11877,20 @@ onMounted(() => {
 .order-edit-page .order-attachments-section :deep(.el-upload-dragger small) {
   font-size: 12px;
   line-height: 18px;
+}
+.order-file-list {
+  display: grid;
+  gap: 8px;
+}
+.order-file-summary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.order-file-summary small {
+  flex: none;
+  color: #8a97a4;
 }
 .order-table-summary {
   min-height: 38px;
@@ -11819,9 +11956,16 @@ onMounted(() => {
   background: #eef1f5;
 }
 .order-detail-page > .document-header {
-  height: 92px;
-  min-height: 92px;
+  height: 144px;
+  min-height: 144px;
   padding: 12px 33px;
+}
+.order-audit-page > .document-header {
+  min-height: 144px;
+  padding: 12px 33px;
+}
+.order-detail-page > .order-document-scroll {
+  margin-right: 0;
 }
 .order-detail-page > .document-header .eyebrow {
   display: block;
@@ -11831,7 +11975,7 @@ onMounted(() => {
   background: #eef1f5;
 }
 .order-detail-page > .order-side-directory {
-  top: 92px;
+  top: 144px;
 }
 .order-detail-page .section-card {
   padding: 12px 16px 13px;
@@ -11847,6 +11991,15 @@ onMounted(() => {
   .order-edit-page .section-card :deep(.el-row > .el-col-6) {
     max-width: 33.3333%;
     flex-basis: 33.3333%;
+  }
+  .order-title-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .order-title-summary > div:nth-child(3) {
+    border-right: 0;
+  }
+  .order-title-summary > div:nth-child(n + 4) {
+    border-top: 1px solid #e7edf3;
   }
 }
 @media (max-width: 1180px) {
@@ -11870,6 +12023,9 @@ onMounted(() => {
     max-width: 50%;
     flex-basis: 50%;
   }
+  .order-field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 760px) {
   .order-edit-page .section-card :deep(.el-row > .el-col-6),
@@ -11877,6 +12033,17 @@ onMounted(() => {
   .order-edit-page .section-card :deep(.el-row > .el-col-12) {
     max-width: 100%;
     flex-basis: 100%;
+  }
+  .order-field-grid,
+  .order-title-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-title-summary > div {
+    border-top: 1px solid #e7edf3;
+    border-right: 0;
+  }
+  .order-title-summary > div:first-child {
+    border-top: 0;
   }
 }
 
