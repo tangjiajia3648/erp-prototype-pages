@@ -1788,7 +1788,7 @@
           </div>
           <div v-if="!isEditing" class="contract-detail-header-metrics budget-summary-metrics">
             <div v-for="metric in budgetSummaryMetrics" :key="metric.label"><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong></div>
-            <div><span>低流速商品</span><strong :class="{ 'slow-sku-warning': slowSkuCount > 0 }">{{ slowSkuCount }}种</strong></div>
+            <div><span>低流速商品</span><el-tooltip content="按低流速标记统计SKU种类，同一SKU多行只计1种"><strong :class="['slow-sku-count', { 'slow-sku-warning': slowSkuCount > 0 }]">{{ slowSkuCount }}<small>种</small></strong></el-tooltip></div>
           </div>
         </header>
 
@@ -2258,8 +2258,6 @@
                   ><RelatedTable type="销售订单" /></el-tab-pane
                 ><el-tab-pane label="采购订单（1）" name="purchase"
                   ><RelatedTable type="采购订单" /></el-tab-pane
-                ><el-tab-pane label="合同（1）" name="contract"
-                  ><RelatedTable type="合同" /></el-tab-pane
               ></el-tabs>
             </article>
 
@@ -2305,14 +2303,13 @@
                       等，最多5个，单个文件不超过20MB
                     </div>
                   </el-upload>
-                  <div v-else class="file-row">
-                    <Document />
-                    <div>
-                      <b>渠道报价与销售预测.xlsx</b
-                      ><span>1.8 MB · 李然上传</span>
+                  <div v-else class="budget-file-list">
+                    <div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row">
+                      <Document />
+                      <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
+                      <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
+                      <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
                     </div>
-                    <el-button link type="primary">预览</el-button
-                    ><el-button link>下载</el-button>
                   </div>
                 </div>
                 <div class="note-column">
@@ -2331,34 +2328,12 @@
             </article>
 
             <article
-              v-if="mode === 'detail' && documentData.version"
-              id="change-records"
-              class="section-card"
-            >
-              <SectionTitle number="06" title="变更记录" />
-              <el-collapse
-                ><el-collapse-item
-                  :title="`第 ${documentData.version} 次修改 · 审批完成`"
-                  ><el-descriptions :column="3" border
-                    ><el-descriptions-item label="修改人"
-                      >周敏</el-descriptions-item
-                    ><el-descriptions-item label="修改时间"
-                      >2026-08-18 09:20</el-descriptions-item
-                    ><el-descriptions-item label="变更内容"
-                      >单据信息 2 项、商品信息 1 项</el-descriptions-item
-                    ></el-descriptions
-                  ></el-collapse-item
-                ></el-collapse
-              >
-            </article>
-
-            <article
               v-if="mode === 'audit' || mode === 'detail'"
               id="approval-progress"
               class="section-card"
             >
               <SectionTitle
-                :number="mode === 'detail' ? '07' : '06'"
+                number="06"
                 title="审批进度"
               />
               <el-table
@@ -2437,7 +2412,7 @@
               class="section-card approval-comments-card"
             >
               <SectionTitle
-                :number="mode === 'detail' ? '08' : '07'"
+                number="07"
                 title="审批评论"
               />
               <div class="approval-comment-stream">
@@ -4366,7 +4341,6 @@ const RelatedTable = defineComponent({
     const saleColumns = [
       ["code", "单据编号", 150],
       ["status", "单据状态", 100],
-      ["contractSituation", "合同情况", 110],
       ["budgetCode", "关联预算单", 150],
       ["customer", "客户", 170],
       ["commerceName", "往来单位工商名称", 180],
@@ -4374,7 +4348,6 @@ const RelatedTable = defineComponent({
       ["businessUnit", "业务单元", 120],
       ["salesman", "业务员", 100],
       ["billTime", "账期(天)", 90, "right"],
-      ["contractCode", "合同编号", 150],
       ["department", "部门", 110],
       ["created", "制单时间", 160],
       ["invoiceType", "发票类型", 110],
@@ -4387,20 +4360,17 @@ const RelatedTable = defineComponent({
     ];
     const purchaseColumns = [
       ["code", "单据编号", 150],
-      ["contractSituation", "合同情况", 110],
       ["directDelivery", "是否直发订单", 110],
       ["status", "单据状态", 100],
       ["budgetCode", "关联预算单", 150],
       ["businessType", "业务类型", 120],
       ["businessUnit", "业务单元", 120],
-      ["entity", "合同签署主体", 180],
       ["supplier", "供应商", 170],
       ["commerceName", "往来单位工商名称", 180],
       ["salesman", "业务员", 100],
       ["purchaseOwner", "采购责任人", 110],
       ["saleOwner", "销售责任人", 110],
       ["billTime", "账期(天)", 90, "right"],
-      ["contractCode", "合同编号", 150],
       ["department", "部门", 110],
       ["created", "制单时间", 160],
       ["invoiceType", "发票类型", 110],
@@ -5658,6 +5628,12 @@ const goods = ref([
     rewardDate: "2026-10-15",
   },
 ]);
+const budgetAttachmentExamples = [
+  { name: "渠道报价与销售预测.xlsx", size: "1.8 MB" },
+  { name: "供应商产品报价单.pdf", size: "2.4 MB" },
+  { name: "低流速商品库存情况及分阶段销售计划补充说明（华东区域九月预算）.xlsx", size: "960 KB" },
+  { name: "项目预算价格依据及商务沟通确认截图.png", size: "3.2 MB" },
+];
 const slowSkuCount = computed(() => new Set(goods.value.filter(row => row.lowFlow === true && row.skuCode).map(row => row.skuCode)).size);
 const budgetReminders = computed(() => {
   const items = [];
@@ -5679,7 +5655,12 @@ const metrics = computed(() => {
       (s, x) => s + x.purchaseQuantity * x.salePrice,
       0,
     ),
-    profit = revenue - cost;
+    supplierIncome = goods.value.reduce(
+      (sum, row) => sum + Number(row.purchaseQuantity || 0) *
+        (Number(row.safeAmount || 0) + Number(row.rewardAmount || 0)),
+      0,
+    ),
+    profit = revenue - cost + supplierIncome;
   return [
     {
       label: "预计销售收入",
@@ -5695,28 +5676,28 @@ const metrics = computed(() => {
     },
     {
       label: "预提价保、奖励总额",
-      value: "¥3,200",
+      value: `¥${supplierIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       note: "",
-      rule: "预提价保、奖励总额 = Σ（预提单台价保 + 预提单台奖励）× 商品数量",
+      rule: "供应商给予我们的预计收益。预提价保、奖励总额 = Σ［采购数量 ×（预提单台价保 + 预提单台奖励）］；数量暂沿用当前采购数量口径。",
     },
     {
       label: "预计毛利",
       value: `¥${profit.toLocaleString()}`,
       note: "",
-      rule: "预计毛利 = 预计销售收入 − 预计采购成本 + 项目单毛利回补总额 − 预提价保、奖励总额",
+      rule: "当前预计毛利 = 预计销售收入 − 预计采购成本 + 预提价保、奖励总额。库存成本及项目单毛利回补的计入口径待确认，当前未计入；预提收益不代表实际到账。",
     },
     {
       label: "预期毛利率",
-      value: `${((profit / revenue) * 100).toFixed(2)}%`,
+      value: revenue > 0 ? `${((profit / revenue) * 100).toFixed(2)}%` : "—",
       note: "",
       rule: "预期毛利率 = 预计毛利 ÷ 预计销售收入 × 100%",
     },
     {
       label: "预计月均毛利率",
-      value: "8.73%",
-      note: "",
-      warning: true,
-      rule: "预计月均毛利率 = 预期毛利率 ÷ 最长销售周期 × 30天",
+      value: "—",
+      note: "规则待确认",
+      warning: false,
+      rule: "月均毛利率计算规则待确认，暂不展示固定演示数值。",
     },
   ];
 });
@@ -6210,20 +6191,17 @@ const budgetModules = computed(() => [
     label: "附件与说明",
     kind: "辅助",
   },
-  ...(mode.value === "detail" && documentData.version
-    ? [{ id: "change-records", order: "06", label: "变更记录", kind: "辅助" }]
-    : []),
   ...(mode.value === "detail"
     ? [
         {
           id: "approval-progress",
-          order: "07",
+          order: "06",
           label: "审批进度",
           kind: "辅助",
         },
         {
           id: "approval-comments",
-          order: "08",
+          order: "07",
           label: "审批评论",
           kind: "辅助",
         },
@@ -11314,7 +11292,17 @@ onMounted(() => {
 .budget-unified-summary > .title-block { padding-right: 0; }
 .budget-unified-summary .budget-summary-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .budget-summary-metrics > div { flex-wrap: wrap; gap: 5px 10px; padding: 0 16px; }
-.budget-summary-metrics .slow-sku-warning { color: #c87d10; }
+.budget-summary-metrics .slow-sku-count { display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 10px; border-radius: 6px; background: #f3f5f7; }
+.budget-summary-metrics .slow-sku-count small { font-size: 13px; font-weight: 400; }
+.budget-summary-metrics .slow-sku-warning { color: #ad6800; background: #fff7e6; }
+.budget-create-page .document-scroll > .section-card + .section-card { margin-top: 16px; }
+.budget-create-page > .document-layout,
+.budget-create-page > .document-layout > .document-scroll { background: #eef1f5; }
+.budget-file-list { display: grid; gap: 10px; min-width: 0; }
+.budget-file-list .file-row { margin: 0; min-width: 0; }
+.budget-file-list .file-row > div { flex: 1; min-width: 0; }
+.budget-file-list .file-row b { white-space: normal; overflow-wrap: anywhere; }
+.budget-file-list .file-row > svg, .budget-file-list .file-row > button { flex-shrink: 0; }
 .flow-control-item { grid-template-columns: 25px minmax(0, 1fr) !important; }
 @media (max-width: 1100px) {
   .budget-unified-summary .budget-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 0; }
