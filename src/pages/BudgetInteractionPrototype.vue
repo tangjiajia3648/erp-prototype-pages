@@ -941,7 +941,7 @@
                         ? '供应商'
                         : '客户'
                     "
-                    ><el-link class="detail-entity-link" type="primary">{{
+                    ><el-link class="detail-entity-link" type="primary" @click="openSupplierDetail(activeContractPage.data.enterprise, activeContractPage.data.type === 'purchase' ? 'supplier' : 'customer')">{{
                       activeContractPage.data.enterprise
                     }}</el-link></el-form-item
                   ></el-col
@@ -1742,9 +1742,7 @@
             >
               <span>{{ item.order }}</span
               ><b>{{ item.label }}</b
-              ><em :class="item.status === '审批中' ? 'warning' : 'done'">{{
-                item.status
-              }}</em>
+              >
             </button>
           </section>
           <div v-show="!contractWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
@@ -1777,100 +1775,21 @@
           },
         ]"
       >
-        <header
-          :class="[
-            'document-header',
-            { 'approval-document-header': mode === 'audit' },
-          ]"
-        >
-          <template v-if="mode === 'audit'">
-            <div class="budget-approval-header-content">
-              <div class="eyebrow">我的审批 · 预算审批</div>
-              <div class="approval-header-title">
-                <h1>分销产品预算审批</h1>
-                <el-tag type="warning" round>审批中</el-tag>
-              </div>
-              <div class="approval-header-body">
-                <div class="approval-summary-identity">
-                  <div>
-                    <el-tag effect="plain">{{ businessTypeDisplay(documentData.type) }}</el-tag
-                    ><span class="approval-summary-code">{{
-                      documentData.code
-                    }}</span>
-                  </div>
-                  <p>
-                    供应商：<strong>{{ documentData.supplier }}</strong
-                    ><i></i>采销责任人：<strong>{{
-                      documentData.owner
-                    }}</strong>
-                  </p>
-                </div>
-                <div class="approval-summary-metrics">
-                  <div>
-                    <span>预计销售收入</span
-                    ><strong>{{
-                      documentData.revenue || "¥328,000.00"
-                    }}</strong>
-                  </div>
-                  <div>
-                    <span>预算单毛利</span
-                    ><strong class="positive">¥57,000.00</strong>
-                  </div>
-                  <div>
-                    <span>预算单毛利率</span
-                    ><strong class="positive">{{
-                      documentData.margin || "18.42%"
-                    }}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-          <template v-else>
-            <div class="title-block">
-              <div class="eyebrow">
-                {{ modeLabel }} · {{ businessTypeDisplay(documentData.type) }}
-              </div>
-              <h1>
-                {{ documentTitle }}
-                <el-tag v-if="mode === 'detail'" type="success"
-                  >审批完成</el-tag
-                >
-              </h1>
-              <p v-if="mode === 'detail'" class="document-meta">
-                <span>预算单号：{{ documentData.code }}</span
-                ><span>业务类型：{{ businessTypeDisplay(documentData.type) }}</span
-                ><span>采销责任人：{{ documentData.owner }}</span
-                ><span>制单时间：{{ documentData.created }}</span
-                ><span>最后更新：2026-08-24 16:08</span>
-              </p>
-              <div v-if="mode === 'detail'" class="budget-detail-title-summary">
-                <div><span>预计销售收入</span><strong>{{ documentData.revenue || '¥328,000.00' }}</strong></div>
-                <div><span>预计采购成本</span><strong>¥271,000.00</strong></div>
-                <div><span>预计毛利</span><strong class="positive">¥57,000.00</strong></div>
-                <div><span>预计毛利率</span><strong class="positive">{{ documentData.margin || '18.42%' }}</strong></div>
-              </div>
-            </div>
-            <div
-              v-if="mode === 'detail'"
-              class="budget-create-header-actions"
-            >
-              <el-button :icon="Printer">打印</el-button
-              ><el-button type="primary" @click="changeMode('edit')"
-                >编辑</el-button
-              ><el-dropdown
-                ><el-button>更多<ArrowDown /></el-button
-                ><template #dropdown
-                  ><el-dropdown-menu
-                    ><el-dropdown-item>创建采购合同</el-dropdown-item
-                    ><el-dropdown-item
-                      >创建销售合同</el-dropdown-item
-                    ></el-dropdown-menu
-                  ></template
-                ></el-dropdown
-              >
-            </div>
-          </template>
+        <header :class="['document-header', { 'contract-detail-summary-header budget-unified-summary': !isEditing }]">
+          <div class="title-block">
+            <div class="eyebrow">{{ modeLabel }} · {{ businessTypeDisplay(documentData.type) }}</div>
+            <h1>{{ documentTitle }} <el-tag v-if="!isEditing" :type="mode === 'audit' ? 'warning' : 'success'">{{ mode === 'audit' ? '审批中' : '审批完成' }}</el-tag></h1>
+            <p v-if="!isEditing" class="document-meta">
+              <span>预算单号：{{ documentData.code }}</span>
+              <span>供应商：<el-link type="primary" @click="openSupplierDetail(form.supplier)">{{ form.supplier || '—' }}</el-link></span>
+              <span>采销责任人：{{ documentData.owner }}</span>
+              <span>制单时间：{{ documentData.created || '—' }}</span>
+            </p>
+          </div>
+          <div v-if="!isEditing" class="contract-detail-header-metrics budget-summary-metrics">
+            <div v-for="metric in budgetSummaryMetrics" :key="metric.label"><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong></div>
+            <div><span>低流速商品</span><strong :class="{ 'slow-sku-warning': slowSkuCount > 0 }">{{ slowSkuCount }}种</strong></div>
+          </div>
         </header>
 
         <div class="document-layout">
@@ -1966,8 +1885,9 @@
                         :label="field.label"
                         :required="field.required"
                       >
+                        <el-link v-if="!isEditing && field.key === 'customer'" type="primary" @click="openSupplierDetail(form.dynamic[field.key], 'customer')">{{ form.dynamic[field.key] || '—' }}</el-link>
                         <el-select
-                          v-if="field.kind === 'select'"
+                          v-else-if="field.kind === 'select'"
                           v-model="form.dynamic[field.key]"
                           :placeholder="`请选择${field.label}`"
                           ><el-option
@@ -2018,7 +1938,7 @@
                           value="成都星海科技有限公司" /></el-select
                       ><el-link
                         v-else
-                        class="detail-entity-link"
+                        class="detail-entity-link" @click="openSupplierDetail(form.supplier)"
                         type="primary"
                         >{{ form.supplier || "—" }}</el-link
                       ></el-form-item
@@ -2536,7 +2456,7 @@
                     <div v-if="comment.reply" class="approval-comment-reply">
                       <strong>{{ comment.reply.user }}回复：</strong>{{ comment.reply.content }}
                     </div>
-                    <el-button link type="primary">回复</el-button>
+                    <el-button v-if="mode === 'audit'" link type="primary">回复</el-button>
                   </div>
                 </div>
               </div>
@@ -2654,7 +2574,7 @@
               @click="flowControlCollapsed = !flowControlCollapsed"
             >
               <span>{{ flowControlCollapsed ? '‹' : '›' }}</span
-              ><em v-if="flowControlCollapsed">2</em>
+              ><em v-if="flowControlCollapsed && budgetReminders.length">{{ budgetReminders.length }}</em>
             </button>
             <template v-if="!flowControlCollapsed">
               <section v-if="isEditing" class="flow-revenue-summary">
@@ -2682,32 +2602,12 @@
                 >
                   <span>{{ item.order }}</span
                   ><b>{{ item.label }}</b
-                  ><em :class="budgetModuleStatus(item).className">{{
-                    budgetModuleStatus(item).label
-                  }}</em>
+                  >
                 </button>
               </section>
-              <section class="flow-status-reminders">
-                <div><strong>状态提醒</strong><span>2项</span></div>
-                <template v-if="mode === 'detail'"
-                  ><button @click="jumpFromFlowControl('plan')">
-                    预计月均毛利率低于建议值</button
-                  ><button @click="jumpFromFlowControl('related')">
-                    1 条采购订单执行中
-                  </button></template
-                ><template v-else-if="mode === 'audit'"
-                  ><button @click="jumpFromFlowControl('plan')">
-                    预计月均毛利率低于建议值</button
-                  ><button @click="jumpFromFlowControl('goods')">
-                    1 项商品数量与价格需复核
-                  </button></template
-                ><template v-else
-                  ><button @click="jumpFromFlowControl('goods')">
-                    商品库存覆盖天数需关注</button
-                  ><button @click="jumpFromFlowControl('attachments')">
-                    附件尚未上传
-                  </button></template
-                >
+              <section v-if="budgetReminders.length" class="flow-status-reminders">
+                <div><strong>状态提醒</strong><span>{{ budgetReminders.length }}项</span></div>
+                <button v-for="item in budgetReminders" :key="item.text" @click="jumpFromFlowControl(item.target)">{{ item.text }}</button>
               </section>
             </template>
           </aside>
@@ -3930,13 +3830,6 @@
             >
               <span>{{ item.order }}</span
               ><b>{{ item.label }}</b
-              ><em
-                :class="
-                  item.id === 'contract-files-section' ? 'warning' : 'done'
-                "
-                >{{
-                  item.id === "contract-files-section" ? "待完善" : "已填写"
-                }}</em
               >
             </button>
           </section>
@@ -4115,7 +4008,7 @@
                   ><el-select v-model="orderDraft.creationMethod" :disabled="orderPageReadonly || orderDraft.entrySource !== 'list'" placeholder="请先选择业务类型" @change="handleOrderCreationMethodChange"
                     ><el-option v-for="item in orderCreationMethodOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.partyLabel" required
-                  ><div v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" class="order-readonly-value link-value">{{ orderDraft.partyName }}</div
+                  ><el-link v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" type="primary" class="order-readonly-value link-value" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.partyName }}</el-link
                   ><el-select v-else v-model="orderDraft.partyName" :disabled="orderUsesExistingContract"><el-option :label="orderDraft.type === 'purchase' ? '四川智联商贸有限公司' : '成都星海科技有限公司'" :value="orderDraft.type === 'purchase' ? '四川智联商贸有限公司' : '成都星海科技有限公司'" /></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.ownerLabel" required
                   ><div v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" class="order-readonly-value">{{ orderDraft.ownerName }}</div
@@ -4406,9 +4299,7 @@
             >
               <span>{{ item.order }}</span
               ><b>{{ item.label }}</b
-              ><em :class="item.status === '待完善' ? 'warning' : 'done'">{{
-                item.status
-              }}</em>
+              >
             </button>
           </section>
           <div v-show="!orderWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
@@ -4419,11 +4310,13 @@
         </aside>
       </section></Teleport
     >
+    <PartyDetailDrawer v-model="partyDrawerVisible" :name="partyDrawerName" :kind="partyDrawerKind" />
   </div>
 </template>
 
 <script setup>
 import GoodsDetailTabs from "../components/GoodsDetailTabs.vue";
+import PartyDetailDrawer from "../components/PartyDetailDrawer.vue";
 import {
   computed,
   defineComponent,
@@ -5161,6 +5054,7 @@ const purchaseOrderTasks = ref([
     modifiedAt: "2026-08-24 10:20",
     spu: "ThinkPad X1 笔记本",
     skuCode: "TP-X1C-U7-32-1T",
+    lowFlow: true,
     sku: "ThinkPad X1 Carbon Ultra 7 / 32G / 1TB",
     price: "¥10,900.00",
     quantity: 20,
@@ -5717,6 +5611,7 @@ const documentData = reactive({
 });
 const goods = ref([
   {
+    lowFlow: true,
     spuName: "ThinkPad X1 笔记本",
     skuCode: "TP-X1C-U7-32-1T",
     skuName: "ThinkPad X1 Carbon Ultra 7 / 32G / 1TB / 黑色",
@@ -5763,6 +5658,18 @@ const goods = ref([
     rewardDate: "2026-10-15",
   },
 ]);
+const slowSkuCount = computed(() => new Set(goods.value.filter(row => row.lowFlow === true && row.skuCode).map(row => row.skuCode)).size);
+const budgetReminders = computed(() => {
+  const items = [];
+  if (isEditing.value) {
+    if (!form.supplier) items.push({ text: "请选择供应商", target: "basic" });
+    if (!goods.value.length) items.push({ text: "请添加商品明细", target: "goods" });
+  } else if (slowSkuCount.value) {
+    items.push({ text: mode.value === "audit" ? `请重点复核 ${slowSkuCount.value}种低流速商品的采购数量及销售计划` : `当前预算包含 ${slowSkuCount.value}种低流速商品`, target: "goods" });
+  }
+  return items;
+});
+const budgetSummaryMetrics = computed(() => metrics.value.filter(item => ["预计销售收入", "预计毛利", "预期毛利率"].includes(item.label)));
 const metrics = computed(() => {
   const cost = goods.value.reduce(
       (s, x) => s + x.purchaseQuantity * x.purchaseAmount,
@@ -6939,19 +6846,13 @@ function openBudgetFromContract() {
     openDocument("detail", contractDraft.budget);
   }
 }
-function openSupplierDetail(name) {
-  const supplierName = name || "供应商详情",
-    key = `supplier-${supplierName}`;
-  if (!tabs.value.some((tab) => tab.key === key))
-    tabs.value.push({
-      key,
-      title: `供应商详情-${supplierName.slice(0, 6)}`,
-      closable: true,
-      supplierPage: true,
-      data: { name: supplierName },
-    });
-  activeTab.value = key;
-  activeView.value = "contract";
+const partyDrawerVisible = ref(false);
+const partyDrawerName = ref("");
+const partyDrawerKind = ref("supplier");
+function openSupplierDetail(name, kind = "supplier") {
+  partyDrawerName.value = name || "未填写名称";
+  partyDrawerKind.value = kind;
+  partyDrawerVisible.value = true;
 }
 function jumpToContractModule(id) {
   const container = contractScrollArea.value,
@@ -11409,6 +11310,14 @@ onMounted(() => {
   min-height: 0;
   display: block;
   padding: 14px 20px 12px;
+}
+.budget-unified-summary > .title-block { padding-right: 0; }
+.budget-unified-summary .budget-summary-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.budget-summary-metrics > div { flex-wrap: wrap; gap: 5px 10px; padding: 0 16px; }
+.budget-summary-metrics .slow-sku-warning { color: #c87d10; }
+.flow-control-item { grid-template-columns: 25px minmax(0, 1fr) !important; }
+@media (max-width: 1100px) {
+  .budget-unified-summary .budget-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 0; }
 }
 .contract-detail-summary-header > .title-block {
   width: 100%;
