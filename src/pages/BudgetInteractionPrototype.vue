@@ -885,6 +885,7 @@
                 <span>合同总额（含税）</span
                 ><strong>{{ activeContractPage.data.amount }}</strong>
               </div>
+              <div v-if="activeContractPage.data.type === 'purchase'" class="contract-term-metric"><span>采购账期</span><strong>{{ contractDetailBillTime }}</strong></div>
               <div>
                 <span>预算单毛利</span
                 ><strong class="positive">¥57,000.00</strong>
@@ -903,6 +904,7 @@
               <span>合同总额（含税）</span
               ><strong>{{ activeContractPage.data.amount }}</strong>
             </div>
+            <div v-if="activeContractPage.data.type === 'purchase'" class="contract-term-metric"><span>采购账期</span><strong>{{ contractDetailBillTime }}</strong></div>
             <div><span>预算单毛利</span><strong>¥57,000.00</strong></div>
             <div><span>预算单毛利率</span><strong>18.18%</strong></div>
           </div>
@@ -941,7 +943,7 @@
                         ? '供应商'
                         : '客户'
                     "
-                    ><el-link class="detail-entity-link" type="primary" @click="openSupplierDetail(activeContractPage.data.enterprise, activeContractPage.data.type === 'purchase' ? 'supplier' : 'customer')">{{
+                    ><el-link class="detail-entity-link" type="primary" @click="openContractPartyDetail(activeContractPage.data.enterprise, activeContractPage.data.type)">{{
                       activeContractPage.data.enterprise
                     }}</el-link></el-form-item
                   ></el-col
@@ -1047,7 +1049,7 @@
                   ></el-col
                 ></el-row
               ></el-form
-            ><el-collapse class="secondary-contract-info detail-budget-collapse"
+            ><el-collapse :model-value="['budget-attachments']" class="secondary-contract-info detail-budget-collapse"
               ><el-collapse-item title="预算详情"
                 ><div class="split-panel contract-budget-plan">
                   <div>
@@ -1097,20 +1099,21 @@
                     </div>
                   </div>
                 </div></el-collapse-item
-              ><el-collapse-item title="预算附件与说明（1）"
-                ><div class="source-budget-attachments">
-                  <div class="file-row">
-                    <Document />
-                    <div>
-                      <strong>渠道报价与销售预测.xlsx</strong
-                      ><span>1.8 MB · 李然上传 · 来源预算单附件</span>
-                      <p class="source-budget-file-note">
-                        <b>说明：</b>渠道报价与销售预测数据详见附件，请按预算审批口径执行。
-                      </p>
+              ><el-collapse-item name="budget-attachments" title="预算附件与说明"
+                ><div class="source-budget-attachments source-budget-separated">
+                    <div class="source-budget-files">
+                      <h4>附件（{{ budgetAttachmentExamples.length }}）</h4>
+                      <div class="budget-file-list">
+                        <div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row">
+                          <Document />
+                          <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
+                          <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
+                          <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
+                        </div>
+                      </div>
                     </div>
-                    <el-link type="primary">预览</el-link>
-                  </div>
-                </div></el-collapse-item
+                    <div class="source-budget-note"><h4>补充说明</h4><p>{{ activeContractPage.data.budget?.supplement || '—' }}</p></div>
+                  </div></el-collapse-item
               ></el-collapse
             >
           </article>
@@ -1124,7 +1127,7 @@
               "
             />
             <div
-              v-if="activeContractPage.data.status === '审批中'"
+              v-if="activeContractPage.data.status === '审批中' && activeContractPage.data.type !== 'purchase'"
               class="contract-local-attention"
             >
               <WarningFilled /><span
@@ -1200,8 +1203,7 @@
           <article
             class="section-card contract-detail-info contract-content-group contract-readonly-section"
           >
-            <SectionTitle number="04" title="合同内容" />
-            <h4 class="contract-content-subtitle">合同信息</h4>
+            <SectionTitle number="04" title="合同" />
             <el-form label-position="top" disabled
               ><el-row :gutter="16"
                 ><el-col :span="24" class="contract-field-group-title"
@@ -1265,7 +1267,7 @@
                           ? '采购账期'
                           : '销售账期'
                       "
-                      ><el-input model-value="30 天" /></el-form-item></el-col
+                      ><el-input :model-value="activeContractPage.data.type === 'purchase' ? contractDetailBillTime : '30 天'" /></el-form-item></el-col
                   ><el-col :span="8"
                     ><el-form-item
                       :label="
@@ -1384,18 +1386,8 @@
                             2
                           " /></el-form-item></el-col></el-row></el-form></el-collapse-item
             ></el-collapse>
-          </article>
-          <article
-            class="section-card contract-readonly-section contract-file-detail-section"
-          >
-            <SectionTitle
-              number="05"
-              :title="
-                activeContractPage.data.contractMode === 'framework'
-                  ? '订单证明文件'
-                  : '合同文件'
-              "
-            />
+          <section class="contract-file-detail-section contract-nested-files">
+            <h4 class="contract-content-subtitle">{{ activeContractPage.data.contractMode === 'framework' ? '订单证明文件' : '合同文件' }}</h4>
             <div
               v-if="activeContractPage.data.status === '审批中'"
               class="contract-local-status"
@@ -1472,12 +1464,13 @@
                 label="对方已用印"
                 width="105"
             /></el-table>
+          </section>
           </article>
           <article
             v-if="activeContractPage.data.type === 'purchase'"
             class="section-card contract-readonly-section"
           >
-            <SectionTitle number="06" title="后续任务" /><el-tabs
+            <SectionTitle number="05" title="后续任务" /><el-tabs
               model-value="purchaseOrder"
               ><el-tab-pane
                 :label="`创建采购订单（${purchaseOrderTasks.length}）`"
@@ -1518,7 +1511,7 @@
           >
             <SectionTitle
               :number="
-                activeContractPage.data.type === 'purchase' ? '07' : '06'
+                activeContractPage.data.type === 'purchase' ? '06' : '05'
               "
               title="审批进度"
             /><el-empty
@@ -1532,7 +1525,7 @@
             class="section-card"
           >
             <SectionTitle
-              :number="activeContractPage.data.type === 'purchase' ? '07' : '06'"
+              :number="activeContractPage.data.type === 'purchase' ? '06' : '05'"
               title="审批进度"
             />
             <el-table
@@ -1610,7 +1603,7 @@
             class="section-card approval-comments-card"
           >
             <SectionTitle
-              :number="activeContractPage.data.type === 'purchase' ? '08' : '07'"
+              :number="activeContractPage.data.type === 'purchase' ? '07' : '06'"
               title="审批评论"
             />
             <div class="approval-comment-stream">
@@ -2884,7 +2877,7 @@
                         <el-link
                           type="primary"
                           @click="
-                            openSupplierDetail(contractDraft.budget?.supplier)
+                            openContractPartyDetail(contractDraft.budget?.supplier, contractDraft.type)
                           "
                           >{{ contractDraft.budget?.supplier }}</el-link
                         ><ArrowDown /></div></el-form-item></el-col
@@ -2924,15 +2917,8 @@
                   ></el-col> </el-row
               ></el-form>
             </section>
-            <div
-              id="contract-related-section"
-              data-contract-module="contract-related-section"
-              class="association-context"
-            >
-              <div>
-                <strong><b>02</b>关联单据信息</strong>
-              </div>
-            </div>
+            <section id="contract-related-section" data-contract-module="contract-related-section" class="contract-block contract-related-group">
+              <h3><b>02</b>关联单据信息</h3>
             <section class="contract-block budget-reference-block">
               <h4 class="contract-content-subtitle budget-basic-subtitle">
                 预算基础信息
@@ -2975,7 +2961,7 @@
             <section
               class="contract-block budget-reference-block related-budget-details"
             >
-              <el-collapse>
+              <el-collapse :model-value="['budget-attachments']">
                 <el-collapse-item name="budget-plan">
                   <template #title
                     ><div class="related-budget-collapse-title">
@@ -3042,25 +3028,26 @@
                 <el-collapse-item name="budget-attachments">
                   <template #title
                     ><div class="related-budget-collapse-title">
-                      <strong>预算附件与说明（1）</strong
+                      <strong>预算附件与说明</strong
                       ><span>与预算单详情保持一致</span>
                     </div></template
                   >
-                  <div class="source-budget-attachments">
-                    <div class="file-row">
-                      <Document />
-                      <div>
-                        <strong>渠道报价与销售预测.xlsx</strong
-                        ><span>1.8 MB · 李然上传 · 来源预算单附件</span>
-                        <p class="source-budget-file-note">
-                          <b>说明：</b>渠道报价与销售预测数据详见附件，请按预算审批口径执行。
-                        </p>
+                  <div class="source-budget-attachments source-budget-separated">
+                    <div class="source-budget-files">
+                      <h4>附件（{{ budgetAttachmentExamples.length }}）</h4>
+                      <div class="budget-file-list">
+                        <div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row">
+                          <Document />
+                          <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
+                          <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
+                          <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
+                        </div>
                       </div>
-                      <el-link type="primary">预览</el-link>
                     </div>
-                  </div>
-                </el-collapse-item>
+                    <div class="source-budget-note"><h4>补充说明</h4><p>{{ contractDraft.budget?.supplement || '—' }}</p></div>
+                  </div></el-collapse-item>
               </el-collapse>
+            </section>
             </section>
             <section
               id="contract-list-section"
@@ -3073,15 +3060,6 @@
                   contractDraft.type === "purchase" ? "采购清单" : "销售清单"
                 }}
               </h3>
-              <div
-                v-if="contractDraft.type === 'purchase'"
-                class="contract-local-attention"
-              >
-                <WarningFilled /><span
-                  >ThinkBook 16+
-                  本次数量已使用全部预算可用数量，请确认后提交。</span
-                >
-              </div>
               <GoodsDetailTabs ref="contractCreateGoodsTabs" :main-label="contractDraft.type === 'purchase' ? '采购清单' : '销售清单'">
               <el-table :data="goods" border size="small"
                 ><el-table-column
@@ -3193,13 +3171,9 @@
               ></el-table>
               </GoodsDetailTabs>
             </section>
-            <section
-              id="contract-content-section"
-              data-contract-module="contract-content-section"
-              class="contract-block contract-info-block"
-            >
-              <h3><b>04</b>合同内容</h3>
-              <h4 class="contract-content-subtitle">合同信息</h4>
+            <section id="contract-content-section" data-contract-module="contract-content-section" class="contract-block contract-main-group">
+              <h3><b>04</b>合同</h3>
+              <section id="contract-info-section" class="contract-block contract-info-block">
               <el-form label-position="top"
                 ><el-row :gutter="16">
                   <el-col :span="24" class="contract-field-group-title"
@@ -3282,17 +3256,17 @@
                     ><el-col :span="8" class="primary-amount-field"
                       ><el-form-item label="合同总金额（含税）"
                         ><el-input
-                          model-value="¥380,000.00"
+                          :model-value="contractDraft.type === 'purchase' ? formatContractMoney(purchaseContractTotals.total) : '¥380,000.00'"
                           disabled /></el-form-item></el-col
                     ><el-col :span="8" class="primary-amount-field"
                       ><el-form-item label="合同总金额（不含税）"
                         ><el-input
-                          model-value="¥336,283.19"
+                          :model-value="contractDraft.type === 'purchase' ? formatContractMoney(purchaseContractTotals.net) : '¥336,283.19'"
                           disabled /></el-form-item></el-col
                     ><el-col :span="8" class="primary-amount-field"
                       ><el-form-item label="合同税额"
                         ><el-input
-                          model-value="¥43,716.81"
+                          :model-value="contractDraft.type === 'purchase' ? formatContractMoney(purchaseContractTotals.tax) : '¥43,716.81'"
                           disabled /></el-form-item></el-col
                     ><el-col :span="8"
                       ><el-form-item
@@ -3498,23 +3472,21 @@
                   ><span>系统将根据当前合同信息和商品清单生成文件，并自动加入合同文件</span>
                 </div>
                 <el-button @click="generateContractFile">{{
-                  contractWorkingFiles.length ? "重新生成合同" : "生成合同"
+                  contractWorkingFiles.some(file => file.source === 'generated') ? "重新生成合同" : "生成合同"
                 }}</el-button>
               </div>
             </section>
             <section
               id="contract-files-section"
-              data-contract-module="contract-files-section"
               class="contract-block contract-files-block"
             >
-              <h3>
-                <b>05</b
-                >{{
+              <h4 class="contract-content-subtitle">
+                {{
                   contractDraft.contractMode === "framework"
                     ? "订单证明文件"
                     : "合同文件"
                 }}
-              </h3>
+              </h4>
               <el-form
                 v-if="contractDraft.contractMode === 'upload'"
                 label-position="top"
@@ -3531,7 +3503,7 @@
                 ></el-form
               >
               <div
-                v-if="contractDraft.contractMode === 'upload'"
+                v-if="contractDraft.contractMode === 'upload' || contractDraft.contractMode === 'generated'"
                 class="compact-file-upload"
               >
                 <el-upload
@@ -3577,7 +3549,7 @@
                 class="contract-file-table"
                 :empty-text="
                   contractDraft.contractMode === 'generated'
-                    ? '点击生成合同后，文件将在这里展示'
+                    ? '生成或上传合同后，文件将在这里展示'
                     : '暂未上传文件'
                 "
               >
@@ -3659,13 +3631,14 @@
                 >
               </el-table>
             </section>
+            </section>
             <section
               v-if="contractDraft.type === 'purchase'"
               id="contract-task-section"
               data-contract-module="contract-task-section"
               class="contract-block downstream-task-block"
             >
-              <h3><b>06</b>后续任务</h3>
+              <h3><b>05</b>后续任务</h3>
               <el-tabs v-model="downstreamTaskTab"
                 ><el-tab-pane
                   :label="`创建采购订单（${purchaseOrderTasks.length}）`"
@@ -3735,7 +3708,7 @@
               "
               class="contract-block related-order-block"
             >
-              <h3><b>07</b>关联采购订单信息</h3>
+              <h3><b>06</b>关联采购订单信息</h3>
               <el-table
                 :data="contractRelatedOrders"
                 border
@@ -3792,6 +3765,13 @@
           <button class="workbench-boundary-toggle" :title="contractWorkbenchCollapsed ? '展开右侧工作台' : '收起右侧工作台'" @click="contractWorkbenchCollapsed = !contractWorkbenchCollapsed">
             <span>{{ contractWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="contractWorkbenchCollapsed">2</em>
           </button>
+          <section v-if="contractDraft.type === 'purchase'" v-show="!contractWorkbenchCollapsed" class="flow-revenue-summary contract-key-indicators">
+            <header><strong>关键指标</strong><span>当前采购合同</span></header>
+            <div><span>{{ contractDraft.contractMode === 'framework' ? '采购清单金额' : '合同总额（含税）' }}</span><strong>{{ formatContractMoney(purchaseContractTotals.total) }}</strong></div>
+            <div class="contract-term-metric"><span>采购账期</span><strong>{{ contractDraft.billTime ?? '—' }} 天</strong></div>
+            <div><span>采购数量</span><strong>{{ purchaseContractTotals.quantity }}</strong></div>
+            <div><span>低流速商品种类</span><strong>{{ slowSkuCount }} 种</strong></div>
+          </section>
           <section v-show="!contractWorkbenchCollapsed" class="flow-navigation-card">
             <div class="flow-control-toggle"><List /><span>模块导航</span></div>
             <button
@@ -4285,6 +4265,9 @@
         </aside>
       </section></Teleport
     >
+    <el-drawer v-model="contractSupplierVisible" title="供应商详情" size="460px" append-to-body>
+      <p class="contract-supplier-placeholder">字段复用现供应商详情字段</p>
+    </el-drawer>
     <PartyDetailDrawer v-model="partyDrawerVisible" :name="partyDrawerName" :kind="partyDrawerKind" />
   </div>
 </template>
@@ -4464,6 +4447,7 @@ const budgets = ref([
   },
   {
     code: "YSGL-202608-02658",
+    supplement: "【演示说明】本预算按分批采购、分阶段销售执行。低流速商品销售计划及价格依据见附件，采购前请核对供应商最新报价。",
     owner: "周敏",
     supplier: "四川智联商贸有限公司",
     type: "FA囤货",
@@ -4831,6 +4815,7 @@ const currentContractDetailModule = ref(0);
 const contractRows = ref([
   {
     code: "CGHT-202608-00192",
+    billTime: 30,
     type: "purchase",
     typeLabel: "采购合同",
     contractMode: "generated",
@@ -4857,6 +4842,7 @@ const contractRows = ref([
   },
   {
     code: "CGHT-草稿-00007",
+    billTime: 30,
     type: "purchase",
     typeLabel: "采购合同",
     contractMode: "framework",
@@ -5879,31 +5865,28 @@ const contractModules = computed(() => [
   {
     id: "contract-content-section",
     order: "04",
-    label: "合同内容",
+    label: "合同",
     note: "已填写",
-  },
-  {
-    id: "contract-files-section",
-    order: "05",
-    label:
-      contractDraft.contractMode === "framework" ? "订单证明文件" : "合同文件",
-    note: workingContractFiles.value.some(
-      (file) => file.companyTemplate === "识别中",
-    )
-      ? "识别中"
-      : "待完善",
   },
   ...(contractDraft.type === "purchase"
     ? [
         {
           id: "contract-task-section",
-          order: "06",
+          order: "05",
           label: "后续任务",
           note: `${purchaseOrderTasks.value.length}条`,
         },
       ]
     : []),
 ]);
+const purchaseContractTotals = computed(() => {
+  const total = goods.value.reduce((sum, row) => sum + Number(row.purchaseQuantity || 0) * Number(row.purchaseAmount || 0), 0);
+  const rate = Number.parseFloat(contractDraft.taxRate) || 0;
+  const net = Math.round(total / (1 + rate / 100) * 100) / 100;
+  return { total, net, tax: Math.round((total - net) * 100) / 100,
+    quantity: goods.value.reduce((sum, row) => sum + Number(row.purchaseQuantity || 0), 0) };
+});
+const formatContractMoney = value => `¥${Number(value).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const currentContractModuleLabel = computed(
   () =>
     contractModules.value.find(
@@ -6133,19 +6116,11 @@ const contractDetailModules = computed(() => {
       label: purchase ? "采购清单" : "销售清单",
       status: `${goods.value.length}项`,
     },
-    { order: "04", label: "合同内容", status: "已完成" },
-    {
-      order: "05",
-      label:
-        activeContractPage.value?.data?.contractMode === "framework"
-          ? "订单证明文件"
-          : "合同文件",
-      status: `${contractFiles.value.length}个`,
-    },
+    { order: "04", label: "合同", status: "已完成" },
     ...(purchase
       ? [
           {
-            order: "06",
+            order: "05",
             label: "后续任务",
             status: `${purchaseOrderTasks.value.length}项`,
           },
@@ -6154,24 +6129,28 @@ const contractDetailModules = computed(() => {
     ...(activeContractPage.value?.data?.status !== "待提交"
       ? [
           {
-            order: purchase ? "07" : "06",
+            order: purchase ? "06" : "05",
             label: "审批进度",
             status: approvalStatus,
           },
           {
-            order: purchase ? "08" : "07",
+            order: purchase ? "07" : "06",
             label: "审批评论",
             status: `${approvalComments.value.length}条`,
           },
         ]
       : [
           {
-            order: purchase ? "07" : "06",
+            order: purchase ? "06" : "05",
             label: "审批进度",
             status: approvalStatus,
           },
         ]),
   ];
+});
+const contractDetailBillTime = computed(() => {
+  const value = activeContractPage.value?.data?.billTime;
+  return value === null || value === undefined || value === "" ? "—" : `${value} 天`;
 });
 const currentContractDetailModuleLabel = computed(
   () =>
@@ -6418,6 +6397,7 @@ function openContractPage(pageMode, type, row = null) {
   contractDraft.contractCode = row?.code || "";
   contractDraft.contractMode = row?.contractMode || "generated";
   contractDraft.frameworkCode = row?.frameworkCode || "";
+  contractDraft.billTime = row?.billTime ?? 30;
   if (type === "purchase" && row?.orderCode && row.orderCode !== "-")
     contractRelatedOrders.value = [
       {
@@ -6827,6 +6807,11 @@ function openBudgetFromContract() {
 const partyDrawerVisible = ref(false);
 const partyDrawerName = ref("");
 const partyDrawerKind = ref("supplier");
+const contractSupplierVisible = ref(false);
+function openContractPartyDetail(name, type) {
+  if (type === "purchase") contractSupplierVisible.value = true;
+  else openSupplierDetail(name, "customer");
+}
 function openSupplierDetail(name, kind = "supplier") {
   partyDrawerName.value = name || "未填写名称";
   partyDrawerKind.value = kind;
@@ -6838,7 +6823,7 @@ function jumpToContractModule(id) {
   if (!target) return;
   currentContractModule.value = id;
   container.scrollTo({
-    top: Math.max(0, target.offsetTop - 58),
+    top: Math.max(0, container.scrollTop + target.getBoundingClientRect().top - container.getBoundingClientRect().top - 16),
     behavior: "smooth",
   });
 }
@@ -6860,7 +6845,7 @@ function jumpToContractDetailModule(index) {
   if (!target) return;
   currentContractDetailModule.value = index;
   container.scrollTo({
-    top: Math.max(0, target.offsetTop - 58),
+    top: Math.max(0, container.scrollTop + target.getBoundingClientRect().top - container.getBoundingClientRect().top - 16),
     behavior: "smooth",
   });
 }
@@ -6968,6 +6953,7 @@ function openDocument(nextMode, row = budgets.value[0]) {
   form.supplier = row.supplier || form.supplier;
   form.owner = row.owner || form.owner;
   form.entity = row.entity || form.entity;
+  form.supplement = nextMode === "create" ? "" : (row.supplement || "");
   form.dynamic =
     nextMode === "create"
       ? {}
@@ -7263,7 +7249,9 @@ function generateContractFile() {
       ? "采购合同正文-系统生成.docx"
       : "销售合同正文-系统生成.docx";
   contractWorkingFiles.value = [
+    ...contractWorkingFiles.value.filter(file => file.source !== "generated"),
     {
+      source: "generated",
       name,
       size: "2.6 MB",
       companyTemplate: "是",
@@ -7284,6 +7272,7 @@ function generatePrototypeContractCode() {
 }
 function handleContractFileUpload(file) {
   contractWorkingFiles.value.push({
+    source: "upload",
     name: file.name,
     size: file.size ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : "-",
     companyTemplate: "识别中",
@@ -12925,4 +12914,80 @@ onMounted(() => {
     grid-row: 2;
   }
 }
+
+/* 合同共用母版：标题独占一行，正文与导航各占一列，避免依赖固定标题高度。 */
+.document-page.contract-edit-page,
+.document-page.contract-detail-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: #eef1f5;
+}
+.document-page.contract-edit-page.workbench-collapsed,
+.document-page.contract-detail-page.workbench-collapsed { grid-template-columns: minmax(0, 1fr) 48px; }
+.document-page.contract-edit-page > .document-header,
+.document-page.contract-detail-page > .document-header {
+  grid-column: 1 / -1; grid-row: 1; margin: 0; width: auto; min-width: 0; background: #fff;
+}
+.document-page.contract-edit-page > .document-scroll,
+.document-page.contract-detail-page > .document-scroll {
+  grid-column: 1; grid-row: 2; margin: 0; width: auto; min-height: 0; background: #eef1f5;
+}
+.document-page.contract-edit-page > .contract-side-directory,
+.document-page.contract-detail-page > .contract-side-directory {
+  position: relative; grid-column: 2; grid-row: 2; inset: auto;
+  width: auto; min-height: 0; padding: 12px; background: #eef1f5; border: 0;
+}
+.document-page.contract-edit-page > .contract-side-directory.collapsed,
+.document-page.contract-detail-page > .contract-side-directory.collapsed { width: auto; padding: 0; }
+.contract-side-directory .flow-navigation-card,
+.contract-side-directory .contract-key-indicators { max-height: 50vh; overflow-y: auto; }
+.contract-key-indicators { margin-bottom: 12px; }
+.contract-key-indicators > div { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #edf0f3; }
+.contract-term-metric strong { color: #1677d2 !important; font-size: 17px !important; font-weight: 700 !important; }
+.document-page.contract-detail-page .contract-detail-header-metrics,
+.document-page.contract-detail-page .contract-approval-metrics { display: flex; flex-wrap: wrap; gap: 12px 0; width: auto; min-width: 0; }
+.document-page.contract-detail-page .contract-detail-header-metrics > div,
+.document-page.contract-detail-page .contract-approval-metrics > div { flex: 0 1 auto; min-width: 0; padding: 0 18px; }
+.document-page.contract-detail-page .document-meta { flex-wrap: wrap; white-space: normal; }
+.document-page.contract-detail-page .section-card { margin-bottom: 16px; }
+.document-page.contract-edit-page .contract-prototype-content { display: flex; gap: 16px; }
+.document-page.contract-edit-page .contract-prototype-content > .contract-block {
+  order: initial; margin: 0; border: 1px solid #e1e7ed; border-radius: 6px; background: #fff; padding: 16px;
+}
+.document-page.contract-edit-page .contract-related-group > .contract-block,
+.document-page.contract-edit-page .contract-main-group > .contract-block {
+  margin: 0; padding: 0; max-width: none; width: 100%; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.document-page.contract-edit-page .contract-related-group .related-budget-details { margin-top: 12px; }
+.document-page.contract-edit-page .contract-main-group .contract-files-block,
+.document-page.contract-detail-page .contract-nested-files { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e7ebf0; }
+.source-budget-separated { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; padding: 12px 0; }
+.source-budget-separated > div { min-width: 0; }
+.source-budget-separated .file-row { max-width: none; }
+.source-budget-separated .file-row b,
+.source-budget-separated .file-row span { white-space: normal; overflow-wrap: anywhere; }
+.source-budget-separated .source-budget-note p { display: block; margin: 0; padding: 12px; background: #f7f9fb; color: #475569; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.contract-supplier-placeholder { color: #475569; line-height: 1.8; padding: 12px 0; }
+@media (max-width: 1440px) {
+  .document-page.contract-edit-page,
+  .document-page.contract-detail-page { grid-template-columns: minmax(0, 1fr) 260px; }
+}
+@media (max-width: 1280px) {
+  .document-page.contract-edit-page,
+  .document-page.contract-detail-page { grid-template-columns: minmax(0, 1fr) 220px; }
+}
+@media (max-width: 1180px) {
+  .document-page.contract-edit-page, .document-page.contract-detail-page,
+  .document-page.contract-edit-page.workbench-collapsed,
+  .document-page.contract-detail-page.workbench-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .source-budget-separated { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+}
+@media (max-width: 760px) {
+  .document-page.contract-edit-page, .document-page.contract-detail-page { grid-template-columns: minmax(0, 1fr); }
+  .document-page.contract-edit-page > .contract-side-directory, .document-page.contract-detail-page > .contract-side-directory { display: none; }
+  .document-page.contract-detail-page .contract-detail-summary-header > .title-block { padding-right: 0; }
+  .document-page.contract-detail-page .budget-create-header-actions { position: static; margin-top: 10px; }
+}
+
 </style>
