@@ -218,7 +218,7 @@
             min-width="170"
             fixed="left"
             ><template #default="{ row }"
-              ><el-link type="primary">{{ row.code }}</el-link></template
+              ><el-link type="primary" :underline="false" @click="openOrderDetail(row, 'sale')">{{ row.code }}</el-link></template
             ></el-table-column
           ><el-table-column prop="status" label="单据状态" width="100"
             ><template #default="{ row }"
@@ -357,7 +357,7 @@
             min-width="170"
             fixed="left"
             ><template #default="{ row }"
-              ><el-link type="primary">{{ row.code }}</el-link></template
+              ><el-link type="primary" :underline="false" @click="openOrderDetail(row, 'purchase')">{{ row.code }}</el-link></template
             ></el-table-column
           ><el-table-column
             prop="contractSituation"
@@ -832,12 +832,7 @@
         >
           <div class="title-block">
             <div class="eyebrow">
-              <span>{{
-                activeContractPage.data.status === "审批中"
-                  ? "我的审批 · 合同审批"
-                  : "合同管理 · 合同详情"
-              }}</span
-              ><span>{{ businessTypeDisplay(activeContractPage.data.budget?.type) }}</span
+              <span>{{ businessTypeDisplay(activeContractPage.data.budget?.type) }}</span
               ><span>{{
                 contractModeLabel(activeContractPage.data.contractMode)
               }}</span>
@@ -885,7 +880,7 @@
                 <span>合同总额（含税）</span
                 ><strong>{{ activeContractPage.data.amount }}</strong>
               </div>
-              <div v-if="activeContractPage.data.type === 'purchase'" class="contract-term-metric"><span>采购账期</span><strong>{{ contractDetailBillTime }}</strong></div>
+              <div class="contract-term-metric"><span>{{ activeContractPage.data.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ contractDetailBillValue }}</b><small v-if="contractDetailBillValue !== '—'">天</small></strong></div>
               <div>
                 <span>预算单毛利</span
                 ><strong class="positive">¥57,000.00</strong>
@@ -893,6 +888,12 @@
               <div>
                 <span>预算单毛利率</span
                 ><strong class="positive">18.18%</strong>
+              </div>
+              <div>
+                <span>低流速商品</span>
+                <el-tooltip content="按低流速标记统计SKU种类，同一SKU多行只计1种">
+                  <strong :class="['slow-sku-count', { 'slow-sku-warning': slowSkuCount > 0 }]">{{ slowSkuCount }}<small>种</small></strong>
+                </el-tooltip>
               </div>
             </div>
           </div>
@@ -904,9 +905,10 @@
               <span>合同总额（含税）</span
               ><strong>{{ activeContractPage.data.amount }}</strong>
             </div>
-            <div v-if="activeContractPage.data.type === 'purchase'" class="contract-term-metric"><span>采购账期</span><strong>{{ contractDetailBillTime }}</strong></div>
+            <div class="contract-term-metric"><span>{{ activeContractPage.data.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ contractDetailBillValue }}</b><small v-if="contractDetailBillValue !== '—'">天</small></strong></div>
             <div><span>预算单毛利</span><strong>¥57,000.00</strong></div>
             <div><span>预算单毛利率</span><strong>18.18%</strong></div>
+            <div><span>低流速商品</span><el-tooltip content="按低流速标记统计SKU种类，同一SKU多行只计1种"><strong :class="['slow-sku-count', { 'slow-sku-warning': slowSkuCount > 0 }]">{{ slowSkuCount }}<small>种</small></strong></el-tooltip></div>
           </div>
           <div
             v-if="
@@ -1267,7 +1269,7 @@
                           ? '采购账期'
                           : '销售账期'
                       "
-                      ><el-input :model-value="activeContractPage.data.type === 'purchase' ? contractDetailBillTime : '30 天'" /></el-form-item></el-col
+                      ><el-input :model-value="contractDetailBillTime" /></el-form-item></el-col
                   ><el-col :span="8"
                     ><el-form-item
                       :label="
@@ -1506,12 +1508,23 @@
             ></el-tabs>
           </article>
           <article
+            v-if="activeContractPage.data.type === 'sale'"
+            id="contract-customer-credit"
+            class="section-card customer-credit-section"
+          >
+            <SectionTitle number="05" title="客户资信信息" />
+            <CustomerCreditPanel
+              :snapshot="activeContractPage.data.status === '审批中'"
+              @inspect="(label) => ElMessage.info(`查看${label}明细`)"
+            />
+          </article>
+          <article
             v-if="activeContractPage.data.status === '待提交'"
             class="section-card"
           >
             <SectionTitle
               :number="
-                activeContractPage.data.type === 'purchase' ? '06' : '05'
+                '06'
               "
               title="审批进度"
             /><el-empty
@@ -1525,7 +1538,7 @@
             class="section-card"
           >
             <SectionTitle
-              :number="activeContractPage.data.type === 'purchase' ? '06' : '05'"
+              number="06"
               title="审批进度"
             />
             <el-table
@@ -1603,7 +1616,7 @@
             class="section-card approval-comments-card"
           >
             <SectionTitle
-              :number="activeContractPage.data.type === 'purchase' ? '07' : '06'"
+              number="07"
               title="审批评论"
             />
             <div class="approval-comment-stream">
@@ -1720,7 +1733,7 @@
         </div>
         <aside :class="['contract-side-directory', { collapsed: contractWorkbenchCollapsed }]">
           <button class="workbench-boundary-toggle" :title="contractWorkbenchCollapsed ? '展开右侧工作台' : '收起右侧工作台'" @click="contractWorkbenchCollapsed = !contractWorkbenchCollapsed">
-            <span>{{ contractWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="contractWorkbenchCollapsed">2</em>
+            <span>{{ contractWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="contractWorkbenchCollapsed">{{ activeContractPage.data.type === 'sale' ? (activeContractPage.data.status === '审批中' ? 4 : 3) : (activeContractPage.data.status === '审批中' ? 2 : 1) }}</em>
           </button>
           <section v-show="!contractWorkbenchCollapsed" class="flow-navigation-card">
             <div class="flow-control-toggle"><List /><span>模块导航</span></div>
@@ -1742,20 +1755,26 @@
             <div>
               <b>状态提醒</b
               ><span>{{
-                activeContractPage.data.status === "审批中" ? "2项" : "1项"
+                activeContractPage.data.type === "sale"
+                  ? activeContractPage.data.status === "审批中" ? "4项" : "3项"
+                  : activeContractPage.data.status === "审批中" ? "2项" : "1项"
               }}</span>
             </div>
             <button v-if="activeContractPage.data.status === '审批中'">
               AI识别结果及印章配置待核对</button
             ><button v-if="activeContractPage.data.type === 'purchase'">
               采购订单任务执行状态待关注
-            </button>
+            </button><template v-else>
+              <button @click="ElMessage.info('查看客户超期应收明细')">客户存在超期应收 ¥249,836.00</button>
+              <button @click="ElMessage.info('查看客户额度占用明细')">当前可用额度为负 ¥524,692.00</button>
+              <button @click="ElMessage.info('查看客户超期明细')">当前最长超期 34 天</button>
+            </template>
           </div>
         </aside>
       </section>
 
       <section
-        v-else-if="activeView !== 'contract'"
+        v-else-if="activeView !== 'contract' && !activeOrderPage"
         :class="[
           'document-page',
           {
@@ -2839,6 +2858,14 @@
               }}
             </h1>
           </div>
+          <div
+            v-if="contractPageMode === 'create'"
+            class="budget-create-header-actions"
+          >
+            <el-button type="primary" plain @click="openAiContractRecognition">
+              AI识别并填充
+            </el-button>
+          </div>
         </header>
         <div
           ref="contractScrollArea"
@@ -3256,17 +3283,17 @@
                     ><el-col :span="8" class="primary-amount-field"
                       ><el-form-item label="合同总金额（含税）"
                         ><el-input
-                          :model-value="contractDraft.type === 'purchase' ? formatContractMoney(purchaseContractTotals.total) : '¥380,000.00'"
+                          :model-value="formatContractMoney(contractTotals.total)"
                           disabled /></el-form-item></el-col
                     ><el-col :span="8" class="primary-amount-field"
                       ><el-form-item label="合同总金额（不含税）"
                         ><el-input
-                          :model-value="contractDraft.type === 'purchase' ? formatContractMoney(purchaseContractTotals.net) : '¥336,283.19'"
+                          :model-value="formatContractMoney(contractTotals.net)"
                           disabled /></el-form-item></el-col
                     ><el-col :span="8" class="primary-amount-field"
                       ><el-form-item label="合同税额"
                         ><el-input
-                          :model-value="contractDraft.type === 'purchase' ? formatContractMoney(purchaseContractTotals.tax) : '¥43,716.81'"
+                          :model-value="formatContractMoney(contractTotals.tax)"
                           disabled /></el-form-item></el-col
                     ><el-col :span="8"
                       ><el-form-item
@@ -3765,11 +3792,11 @@
           <button class="workbench-boundary-toggle" :title="contractWorkbenchCollapsed ? '展开右侧工作台' : '收起右侧工作台'" @click="contractWorkbenchCollapsed = !contractWorkbenchCollapsed">
             <span>{{ contractWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="contractWorkbenchCollapsed">2</em>
           </button>
-          <section v-if="contractDraft.type === 'purchase'" v-show="!contractWorkbenchCollapsed" class="flow-revenue-summary contract-key-indicators">
-            <header><strong>关键指标</strong><span>当前采购合同</span></header>
-            <div><span>{{ contractDraft.contractMode === 'framework' ? '采购清单金额' : '合同总额（含税）' }}</span><strong>{{ formatContractMoney(purchaseContractTotals.total) }}</strong></div>
-            <div class="contract-term-metric"><span>采购账期</span><strong>{{ contractDraft.billTime ?? '—' }} 天</strong></div>
-            <div><span>采购数量</span><strong>{{ purchaseContractTotals.quantity }}</strong></div>
+          <section v-show="!contractWorkbenchCollapsed" class="flow-revenue-summary contract-key-indicators">
+            <header><strong>关键指标</strong><span>当前{{ contractDraft.type === 'purchase' ? '采购' : '销售' }}合同</span></header>
+            <div><span>{{ contractDraft.contractMode === 'framework' ? (contractDraft.type === 'purchase' ? '采购清单金额' : '销售清单金额') : '合同总额（含税）' }}</span><strong>{{ formatContractMoney(contractTotals.total) }}</strong></div>
+            <div class="contract-term-metric"><span>{{ contractDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ contractDraft.billTime ?? '—' }}</b><small v-if="contractDraft.billTime !== null && contractDraft.billTime !== undefined && contractDraft.billTime !== ''">天</small></strong></div>
+            <div><span>{{ contractDraft.type === 'purchase' ? '采购数量' : '销售数量' }}</span><strong>{{ contractTotals.quantity }}</strong></div>
             <div><span>低流速商品种类</span><strong>{{ slowSkuCount }} 种</strong></div>
           </section>
           <section v-show="!contractWorkbenchCollapsed" class="flow-navigation-card">
@@ -3907,19 +3934,19 @@
           },
         ]"
       >
-        <header class="document-header">
+        <header
+          :class="[
+            'document-header',
+            {
+              'contract-detail-summary-header': orderPageReadonly,
+              'contract-approval-header': activeOrderPage.orderPageMode === 'audit',
+            },
+          ]"
+        >
           <div class="title-block">
-            <div class="eyebrow">
-              {{ orderDraft.typeLabel }} ·
-              {{
-                activeOrderPage.orderPageMode === "audit"
-                  ? "我的审批"
-                  : activeOrderPage.orderPageMode === "detail"
-                    ? "订单详情"
-                  : activeOrderPage.orderPageMode === "edit"
-                    ? "编辑"
-                    : "新建"
-              }}
+            <div v-if="orderPageReadonly" class="eyebrow order-summary-eyebrow">
+              <span>{{ orderBusinessTypeDisplay }}</span>
+              <span>{{ orderCreationMethodDisplay }}</span>
             </div>
             <h1>
               {{
@@ -3931,21 +3958,38 @@
                     ? `编辑${orderDraft.typeLabel}`
                     : `新建${orderDraft.typeLabel}`
               }}
+              <el-tag
+                v-if="orderPageReadonly"
+                :type="activeOrderPage.orderPageMode === 'audit' ? 'warning' : 'success'"
+                size="small"
+              >{{ activeOrderPage.data.status || (activeOrderPage.orderPageMode === 'audit' ? '审批中' : '待履约') }}</el-tag>
             </h1>
-            <p>
+            <p v-if="orderPageReadonly" class="document-meta order-detail-meta">
+              <span v-if="activeOrderPage.orderPageMode === 'audit'">订单编号：{{ orderDraft.orderCode }}</span>
+              <span>{{ orderDraft.partyLabel }}：<el-link type="primary" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.partyName || '—' }}</el-link></span>
+              <span>{{ orderDraft.ownerLabel }}：{{ orderDraft.ownerName || '—' }}</span>
+              <span>制单时间：{{ activeOrderPage.data.created || activeOrderPage.data.submittedAt || '—' }}</span>
+              <span>最后更新：{{ activeOrderPage.data.updated || activeOrderPage.data.submittedAt || activeOrderPage.data.created || '—' }}</span>
+            </p>
+            <p v-else>
               {{
                 orderPageReadonly
                   ? `${orderDraft.partyLabel}：${orderDraft.partyName}　｜　${orderDraft.ownerLabel}：${orderDraft.ownerName}`
                   : "先选择业务类型，系统将自动匹配可用的创建方式和关联单据"
               }}
             </p>
-            <div v-if="orderPageReadonly" class="order-title-summary">
+            <div v-if="activeOrderPage.orderPageMode === 'audit'" class="contract-approval-metrics">
               <div><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
-              <div><span>账期</span><strong>{{ orderDraft.billTime }}天</strong></div>
-              <div><span>{{ orderDraft.partyLabel }}</span><b :title="orderDraft.partyName">{{ orderDraft.partyName }}</b></div>
-              <div><span>业务类型</span><b>{{ orderBusinessTypeDisplay }}</b></div>
-              <div><span>订单状态</span><b>{{ activeOrderPage.orderPageMode === 'audit' ? '审批中' : '待履约' }}</b></div>
+              <div class="contract-term-metric"><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ orderDraft.billTime ?? '—' }}</b><small v-if="orderDraft.billTime !== null && orderDraft.billTime !== undefined && orderDraft.billTime !== ''">天</small></strong></div>
+              <div><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></div>
+              <div><span>发票类型</span><strong>{{ orderDraft.invoiceType || '—' }}</strong></div>
             </div>
+          </div>
+          <div v-if="activeOrderPage.orderPageMode === 'detail'" class="contract-detail-header-metrics">
+            <div><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
+            <div class="contract-term-metric"><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ orderDraft.billTime ?? '—' }}</b><small v-if="orderDraft.billTime !== null && orderDraft.billTime !== undefined && orderDraft.billTime !== ''">天</small></strong></div>
+            <div><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></div>
+            <div><span>发票类型</span><strong>{{ orderDraft.invoiceType || '—' }}</strong></div>
           </div>
         </header>
         <div
@@ -3955,7 +3999,7 @@
         >
           <article id="order-basic" class="section-card">
             <SectionTitle number="01" title="基础信息" /><el-form label-position="top"
-              ><div class="subsection-heading">业务归属</div><el-row :gutter="16"
+              ><div class="subsection-heading">业务归属</div><el-row :gutter="16" class="order-field-grid"
                 ><el-col :span="6"><el-form-item label="业务类型" required
                   ><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderBusinessTypeDisplay }}</div
                   ><el-cascader v-else v-model="orderBusinessPath" :options="orderBusinessTypeCascaderOptions" :props="{ expandTrigger: 'hover' }" separator=" / " :show-all-levels="true" @change="handleOrderBusinessTypeChange" /></el-form-item></el-col
@@ -3964,14 +4008,14 @@
                     ><el-option v-for="item in orderCreationMethodOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.partyLabel" required
                   ><el-link v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" type="primary" class="order-readonly-value link-value" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.partyName }}</el-link
-                  ><el-select v-else v-model="orderDraft.partyName" :disabled="orderUsesExistingContract"><el-option :label="orderDraft.type === 'purchase' ? '四川智联商贸有限公司' : '成都星海科技有限公司'" :value="orderDraft.type === 'purchase' ? '四川智联商贸有限公司' : '成都星海科技有限公司'" /></el-select></el-form-item></el-col
+                  ><el-select v-else v-model="orderDraft.partyName" :disabled="orderUsesExistingContract && orderDraft.entrySource !== 'list'" :placeholder="orderDraft.type === 'purchase' ? '请选择供应商' : '请选择客户'"><template v-if="orderDraft.type === 'sale'"><el-option label="成都星海科技有限公司" value="成都星海科技有限公司" /><el-option label="重庆恒信贸易有限公司" value="重庆恒信贸易有限公司" /><el-option label="成都启航科技有限公司" value="成都启航科技有限公司" /></template><template v-else><el-option label="四川智联商贸有限公司" value="四川智联商贸有限公司" /></template></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.ownerLabel" required
                   ><div v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" class="order-readonly-value">{{ orderDraft.ownerName }}</div
-                  ><el-select v-else v-model="orderDraft.ownerName" :disabled="orderUsesExistingContract"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /></el-select></el-form-item></el-col
-              ></el-row><div class="subsection-heading">组织与开票</div><el-row :gutter="16"
+                  ><el-select v-else v-model="orderDraft.ownerName" :disabled="orderUsesExistingContract && orderDraft.entrySource !== 'list'" :placeholder="orderDraft.type === 'purchase' ? '请选择采购责任人' : '请选择销售责任人'"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /><el-option label="周敏" value="周敏" /><el-option label="王芳" value="王芳" /></el-select></el-form-item></el-col
+              ></el-row><div class="subsection-heading">组织与开票</div><el-row :gutter="16" class="order-field-grid"
                 ><el-col :span="6"><el-form-item label="合同签署主体"><div class="order-readonly-value">{{ orderDraft.entity }}</div></el-form-item></el-col
                 ><el-col :span="6"><el-form-item label="业务单元"><div class="order-readonly-value">{{ orderDraft.businessLine }}</div></el-form-item></el-col
-                ><el-col :span="6"><el-form-item label="发票类型" required><el-select v-model="orderDraft.invoiceType" :disabled="orderPageReadonly || orderUsesExistingContract"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></el-form-item></el-col
+                ><el-col :span="6"><el-form-item label="发票类型" required><el-select v-model="orderDraft.invoiceType" :disabled="orderPageReadonly || (orderUsesExistingContract && orderDraft.entrySource !== 'list')"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item label="账期" required
                   ><div v-if="orderPageReadonly || orderUsesExistingContract" class="order-readonly-value emphasized-day-value">{{ orderDraft.billTime }} 天</div
                   ><el-input v-else :model-value="String(orderDraft.billTime)" inputmode="numeric" maxlength="4" placeholder="请输入整数" @input="setOrderDayValue('billTime', $event)"><template #suffix>天</template></el-input></el-form-item></el-col
@@ -3980,18 +4024,16 @@
           <article id="order-related" class="section-card">
             <SectionTitle number="02" title="关联单据信息" /><el-form
               label-position="top"
-              ><el-row :gutter="16"
+              ><el-row :gutter="16" class="order-field-grid"
                 ><el-col v-if="showOrderBudget" :span="6"
                   ><el-form-item label="关联预算单" :required="orderDraft.creationMethod === 'budget_later'"
-                    ><el-input v-model="orderDraft.budgetCode" :readonly="orderPageReadonly || orderDraft.entrySource !== 'list' || orderDraft.creationMethod === 'contract'" :placeholder="orderDraft.creationMethod === 'contract' ? '由合同自动带出' : '请输入或选择预算单'" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.budgetCode" type="primary">查看</el-link></template></el-input
-                    ><div v-if="!orderPageReadonly && orderDraft.budgetCode" class="field-assist-text">预算内容已复制到当前订单；订单内调整不会修改原预算单。</div></el-form-item></el-col
+                    ><el-link v-if="orderPageReadonly && orderDraft.budgetCode" :underline="false" class="order-readonly-value document-field-link" @click="openOrderBudgetDetail">{{ orderDraft.budgetCode }}</el-link><div v-else class="linked-document-control"><el-select v-model="orderDraft.budgetCode" filterable clearable placeholder="请选择预算单编号"><el-option v-for="item in budgets" :key="item.code" :label="item.code" :value="item.code" /></el-select><el-button v-if="orderDraft.budgetCode" link type="primary" @click="openOrderBudgetDetail">查看</el-button></div></el-form-item></el-col
                 ><el-col v-if="showOrderContract" :span="6"><el-form-item label="关联合同" required
-                    ><el-input v-model="orderDraft.contractCode" :readonly="orderPageReadonly || orderDraft.entrySource !== 'list'" placeholder="请输入或选择已生效合同" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.contractCode" type="primary">查看</el-link></template></el-input></el-form-item></el-col
+                    ><el-link v-if="orderPageReadonly && orderDraft.contractCode" :underline="false" class="order-readonly-value document-field-link" @click="openOrderContractDetail">{{ orderDraft.contractCode }}</el-link><el-input v-else v-model="orderDraft.contractCode" :readonly="orderDraft.entrySource !== 'list'" placeholder="请输入或选择已生效合同" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.contractCode" type="primary" @click="openOrderContractDetail">查看</el-link></template></el-input></el-form-item></el-col
                 ><el-col :span="6"><el-form-item label="单据来源"><div class="order-readonly-value">{{ orderEntrySourceLabel }}</div></el-form-item></el-col
                 ><el-col v-if="showProjectFollowup" :span="6"><el-form-item label="是否属于项目后运行单"><el-switch v-model="orderDraft.projectFollowup" :disabled="orderPageReadonly" /></el-form-item></el-col
                 ><el-col v-if="showCapitalOccupied" :span="6"><el-form-item label="是否占用资金" required><el-switch v-model="orderDraft.capitalOccupied" :disabled="orderPageReadonly" /></el-form-item></el-col
                 ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="供应商订单号"><el-input v-model="orderDraft.supplierOrderCode" :disabled="orderPageReadonly" placeholder="可在下单后补充" /></el-form-item></el-col
-                ><el-col v-if="orderContractHandlingText" :span="12"><el-form-item label="合同处理"><div class="order-readonly-value no-contract-value">{{ orderContractHandlingText }}</div></el-form-item></el-col
               ></el-row
             ></el-form>
           </article>
@@ -4008,7 +4050,7 @@
               <el-table-column prop="skuName" label="SKU名称" min-width="220" fixed="left" show-overflow-tooltip />
               <el-table-column prop="specModel" label="配置说明" min-width="150" show-overflow-tooltip />
               <el-table-column :label="orderDraft.type === 'purchase' ? '采购数量' : '销售数量'" width="145" align="right">
-                <template #default="{ row }"><div class="goods-quantity-action"><el-input-number v-if="!orderPageReadonly" v-model="row.purchaseQuantity" :min="1" controls-position="right" /><el-link v-else type="primary" @click="orderGoodsTabs?.openItem(row)">{{ row.purchaseQuantity }}</el-link><el-link v-if="!orderPageReadonly" type="primary" @click="orderGoodsTabs?.openItem(row)">查看</el-link></div></template>
+                <template #default="{ row }"><div class="goods-quantity-action"><el-input-number v-if="!orderPageReadonly" v-model="row.purchaseQuantity" :min="1" controls-position="right" /><el-link v-else-if="orderDraft.type === 'purchase'" type="primary" @click="orderGoodsTabs?.openItem(row)">{{ row.purchaseQuantity }}</el-link><span v-else>{{ row.purchaseQuantity }}</span><el-link v-if="!orderPageReadonly && orderDraft.type === 'purchase'" type="primary" @click="orderGoodsTabs?.openItem(row)">查看</el-link></div></template>
               </el-table-column>
               <template v-if="orderDraft.type === 'sale'">
                 <el-table-column label="原单价" width="125" align="right"><template #default="{ row }"><el-input-number v-if="!orderPageReadonly && !orderUsesExistingContract" v-model="row.salePrice" :min="0" :precision="2" controls-position="right" /><span v-else>¥{{ Number(row.salePrice || 0).toLocaleString() }}</span></template></el-table-column>
@@ -4044,17 +4086,49 @@
           </article>
           <article v-if="showGeneratedSaleContract" id="order-contract-info" class="section-card">
             <SectionTitle number="04" title="销售合同信息" />
-            <el-alert :closable="false" type="info" show-icon :title="orderDraft.creationMethod === 'joint_audit' ? '合同与订单将一起提交审批' : '合同先提交审批，销售订单暂存为草稿'" />
-            <el-form label-position="top" class="order-contract-form">
-              <div class="subsection-heading">合同生成</div>
-              <el-row :gutter="16">
-                <el-col :span="6"><el-form-item label="合同情况" required><el-radio-group v-model="orderDraft.contractSituation"><el-radio value="generated">系统生成合同</el-radio><el-radio value="upload">上传合同</el-radio></el-radio-group></el-form-item></el-col>
-                <el-col :span="6"><el-form-item label="签约地点" required><el-input v-model="orderDraft.signatureLocation" /></el-form-item></el-col>
-                <el-col :span="6"><el-form-item label="合同税率" required><el-select v-model="orderDraft.contractTaxRate"><el-option label="13%" value="13%" /><el-option label="6%" value="6%" /></el-select></el-form-item></el-col>
-                <el-col :span="6"><el-form-item label="付款方式" required><el-select v-model="orderDraft.paymentMethod"><el-option label="款到发货" value="款到发货" /><el-option label="账期结算" value="账期结算" /></el-select></el-form-item></el-col>
+            <el-form label-position="top" class="order-contract-form" :disabled="orderPageReadonly">
+              <div class="contract-field-group-title">合同生成方式</div>
+              <el-form-item label="合同情况" required class="contract-mode-form-item"><el-radio-group v-model="orderDraft.contractSituation" class="contract-mode-cards"><el-radio label="generated"><strong>系统生成合同</strong><span>填写合同条款后，由系统生成合同文件</span></el-radio><el-radio label="upload"><strong>上传合同</strong><span>填写合同编号并上传已有合同文件</span></el-radio><el-radio label="framework"><strong>适用框架协议</strong><span>选择框架协议，仅上传订单证明文件</span></el-radio></el-radio-group></el-form-item>
+              <el-row v-if="orderDraft.contractSituation === 'framework'" :gutter="16">
+                <el-col :span="8"><el-form-item label="框架协议编号"><el-select v-model="orderDraft.frameworkCode"><el-option label="KJXY-2026-0086" value="KJXY-2026-0086" /><el-option label="KJXY-2026-0092" value="KJXY-2026-0092" /></el-select></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="框架协议附件"><el-link type="primary">框架协议正文-KJXY-2026-0086.pdf</el-link></el-form-item></el-col>
               </el-row>
-              <div class="subsection-heading">结算条款</div>
-              <el-form-item label="结算条款" required><el-input v-model="orderDraft.settlementTerms" type="textarea" :rows="2" maxlength="500" show-word-limit /></el-form-item>
+              <div class="contract-field-group-title">合同金额与结算</div>
+              <el-row :gutter="16">
+                <el-col v-if="orderDraft.contractSituation !== 'framework'" :span="8"><el-form-item label="合同税率情况"><el-select v-model="orderDraft.contractTaxRate"><el-option label="13%" value="13%" /><el-option label="6%" value="6%" /></el-select></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="回款方式"><el-select v-model="orderDraft.paymentMethod"><el-option label="货到付款" value="货到付款" /><el-option label="款到发货" value="款到发货" /><el-option label="分阶段付款" value="分阶段付款" /></el-select></el-form-item></el-col>
+                <template v-if="orderDraft.contractSituation !== 'framework'">
+                  <el-col :span="8"><el-form-item label="合同总金额（含税）"><div class="order-result-value">¥{{ orderTotalAmount.toLocaleString() }}</div></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="合同总金额（不含税）"><div class="order-result-value">¥{{ (orderTotalAmount / 1.13).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="合同税额"><div class="order-result-value">¥{{ (orderTotalAmount - orderTotalAmount / 1.13).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="回款约定"><el-input v-model="orderDraft.settlementTerms" /></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="销售账期（天）"><el-input :model-value="String(orderDraft.billTime)" inputmode="numeric" maxlength="4" @input="setOrderDayValue('billTime', $event)"><template #suffix>天</template></el-input></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="预计回款日期"><el-date-picker v-model="orderDraft.expectedReceiptDate" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col>
+                </template>
+              </el-row>
+              <div v-if="orderDraft.contractSituation === 'generated'" class="contract-field-group-title">交付与履约</div>
+              <el-row v-if="orderDraft.contractSituation === 'generated'" :gutter="16">
+                <el-col :span="8"><el-form-item label="开票模式"><el-select v-model="orderDraft.invoiceMode"><el-option label="先票后款" value="先票后款" /><el-option label="先款后票" value="先款后票" /></el-select></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="开票天数"><el-input :model-value="String(orderDraft.invoiceDays)" inputmode="numeric" maxlength="3" @input="setOrderDayValue('invoiceDays', $event)"><template #suffix>天</template></el-input></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="发票类型"><el-select v-model="orderDraft.invoiceType"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /></el-select></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="交付约定"><el-input v-model="orderDraft.deliveryAgreement" /></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="交付要求"><el-input v-model="orderDraft.deliveryRequirement" /></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="技术支持及服务"><el-select v-model="orderDraft.technicalSupport"><el-option label="需要" value="需要" /><el-option label="不需要" value="不需要" /></el-select></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="产品售后"><el-input v-model="orderDraft.afterSales" /></el-form-item></el-col>
+                <el-col :span="8"><el-form-item label="质保条件"><el-input v-model="orderDraft.warranty" /></el-form-item></el-col>
+              </el-row>
+              <div v-if="orderDraft.contractSituation !== 'framework'" class="contract-field-group-title">用印信息</div>
+              <el-row v-if="orderDraft.contractSituation !== 'framework'" :gutter="16">
+                <el-col :span="8"><el-form-item label="用印方式"><el-select v-model="orderDraft.printingMethod"><el-option label="电子用印" value="电子用印" /><el-option label="线下用印" value="线下用印" /></el-select></el-form-item></el-col>
+                <template v-if="orderDraft.contractSituation === 'generated'">
+                  <el-col :span="8"><el-form-item label="用印情况"><el-select v-model="orderDraft.printingSituation"><el-option label="双方用印" value="双方用印" /><el-option label="我方用印" value="我方用印" /><el-option label="对方用印" value="对方用印" /></el-select></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="印章需求"><el-input v-model="orderDraft.sealRequirements" /></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="审批后自动用印"><el-switch v-model="orderDraft.autoSeal" /></el-form-item></el-col>
+                  <el-col :span="8"><el-form-item label="是否需要邮寄"><el-switch v-model="orderDraft.needMail" /></el-form-item></el-col>
+                  <el-col v-if="orderDraft.needMail" :span="8"><el-form-item label="收件人信息"><el-input v-model="orderDraft.receiveInfo" /></el-form-item></el-col>
+                  <el-col :span="24"><el-form-item label="备注"><el-input v-model="orderDraft.contractRemark" type="textarea" :rows="2" /></el-form-item></el-col>
+                </template>
+              </el-row>
             </el-form>
           </article>
           <article id="order-delivery" class="section-card">
@@ -4098,17 +4172,15 @@
                   ><el-col :span="8"
                     ><el-form-item label="进项发票预计收回日期"
                       ><el-date-picker v-model="orderDraft.invoiceReturnDate" :disabled="orderPageReadonly" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col></template></el-row
-              ><div class="subsection-heading">{{ orderDraft.type === 'purchase' ? '付款与结算' : '收款与开票' }}</div><el-row :gutter="16" class="order-field-grid order-settlement-grid"
+              ><div class="subsection-heading">{{ orderDraft.type === 'purchase' ? '付款与结算' : '收款与开票' }}</div><el-row :gutter="16" :class="['order-field-grid', 'order-settlement-grid', { 'sale-settlement-grid': orderDraft.type === 'sale' }]"
                 ><template v-if="orderDraft.type === 'purchase'"><el-col :span="6"><el-form-item label="价保使用"
-                      ><el-input-number
-                        v-model="orderDraft.priceProtection"
-                        :disabled="orderPageReadonly" :min="0" /></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="折扣使用"><el-input-number v-model="orderDraft.discount" :disabled="orderPageReadonly" :min="0" /></el-form-item></el-col
+                      ><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.priceProtection || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.priceProtection" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
+                  ><el-col :span="6"><el-form-item label="折扣使用"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.discount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.discount" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="自动生成对账单"><el-switch v-model="orderDraft.autoSettlement" :disabled="orderPageReadonly" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="自动生成付款草稿"><el-switch v-model="orderDraft.autoPaymentDraft" :disabled="orderPageReadonly" /></el-form-item></el-col></template
                 ><template v-else><el-col :span="6"><el-form-item label="订单金额"><div class="order-result-value">¥{{ orderTotalAmount.toLocaleString() }}</div></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="预收分配到此订单金额"><div class="order-result-value">¥{{ orderDraft.prepaymentAllocated.toLocaleString() }}</div></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="价保使用"><el-input-number v-model="orderDraft.priceProtection" :disabled="orderPageReadonly" :min="0" /></el-form-item></el-col
+                  ><el-col :span="6"><el-form-item label="价保使用"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.priceProtection || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.priceProtection" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="自动生成对账单" required><el-switch v-model="orderDraft.autoSettlement" :disabled="orderPageReadonly" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="自动生成收款通知" required><el-switch v-model="orderDraft.autoReceiptNotice" :disabled="orderPageReadonly" /></el-form-item></el-col></template
               ></el-row
@@ -4118,25 +4190,27 @@
             id="order-attachments"
             class="section-card order-attachments-section"
           >
-            <SectionTitle :number="showGeneratedSaleContract ? '06' : '05'" title="附件与说明" /><div class="order-attachments-stack"
-              ><div
-                ><el-form label-position="top"
-                  ><el-form-item label="备注"
-                    ><el-input
-                      v-model="orderDraft.remark"
-                      type="textarea"
-                      :disabled="orderPageReadonly"
-                      :rows="2"
-                      maxlength="500"
-                      show-word-limit /></el-form-item></el-form></div
-              ><div
-                ><el-upload v-if="!orderPageReadonly" drag action="#" :auto-upload="false" :limit="10" :file-list="orderAttachmentFiles"
-                  ><Upload />
-                  <div>点击或拖拽上传附件</div>
-                  <small>最多10个文件，支持长文件名和多附件展示</small></el-upload><div v-else class="order-file-list"><div v-for="file in orderAttachmentFiles" :key="file.uid" class="order-file-summary"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.sizeLabel }}</small><el-link type="primary">预览</el-link></div></div
+            <SectionTitle :number="showGeneratedSaleContract ? '06' : '05'" title="附件与说明" /><div class="attachment-layout order-attachment-layout"
+              ><div class="attachment-column"
+                ><h3>附件</h3><el-upload v-if="!orderPageReadonly" drag action="#" :auto-upload="false" :limit="10" :file-list="orderAttachmentFiles"
+                  ><div class="upload-action"><Plus /><b>上传附件</b></div>
+                  <div class="upload-help">最多10个文件，支持长文件名和多附件展示</div></el-upload><div v-else class="budget-file-list"><div v-for="file in orderAttachmentFiles" :key="file.uid" class="file-row"><Document /><div><b :title="file.name">{{ file.name }}</b><span>{{ file.sizeLabel }} · 张晨上传 · 演示附件</span></div><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div
                 ></div
+              ><div class="note-column"
+                ><h3>补充说明</h3><el-input v-model="orderDraft.remark" type="textarea" :disabled="orderPageReadonly" :rows="5" maxlength="500" show-word-limit placeholder="请输入补充说明（选填）" /></div
               ></div
             >
+          </article>
+          <article
+            v-if="orderPageReadonly && orderDraft.type === 'sale'"
+            id="order-customer-credit"
+            class="section-card customer-credit-section"
+          >
+            <SectionTitle :number="showGeneratedSaleContract ? '07' : '06'" title="客户资信信息" />
+            <CustomerCreditPanel
+              :snapshot="activeOrderPage.orderPageMode === 'audit'"
+              @inspect="(label) => ElMessage.info(`查看${label}明细`)"
+            />
           </article>
           <div
             v-if="!orderPageReadonly"
@@ -4221,25 +4295,22 @@
             </div>
           </footer>
         </div>
-        <aside v-if="activeOrderPage.orderPageMode !== 'detail'" :class="['contract-side-directory', 'order-side-directory', { collapsed: orderWorkbenchCollapsed }]">
+        <aside :class="['contract-side-directory', 'order-side-directory', { collapsed: orderWorkbenchCollapsed }]">
           <button class="workbench-boundary-toggle" :title="orderWorkbenchCollapsed ? '展开右侧工作台' : '收起右侧工作台'" @click="orderWorkbenchCollapsed = !orderWorkbenchCollapsed">
-            <span>{{ orderWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="orderWorkbenchCollapsed">2</em>
+            <span>{{ orderWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="orderWorkbenchCollapsed">{{ orderDraft.type === 'sale' ? 3 : 2 }}</em>
           </button>
-          <section v-show="!orderWorkbenchCollapsed" class="order-overview-card">
-            <div><b>订单概览</b><small>实时计算</small></div>
-            <p>
-              <span>SKU种类</span><strong>{{ goods.length }}</strong>
-            </p>
-            <p>
-              <span>合计数量</span><strong>{{ orderTotalQuantity }}</strong>
-            </p>
-            <p>
-              <span>订单金额</span
-              ><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong>
-            </p>
-            <p>
-              <span>账期</span><strong>{{ orderDraft.billTime }}天</strong>
-            </p>
+          <section v-if="activeOrderPage.orderPageMode !== 'detail'" v-show="!orderWorkbenchCollapsed" class="order-overview-card">
+            <div><b>{{ activeOrderPage.orderPageMode === 'create' ? '关键指标' : '订单概览' }}</b><small>实时计算</small></div>
+            <template v-if="activeOrderPage.orderPageMode === 'create'">
+              <p><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
+              <p><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ orderDraft.billTime }}天</strong></p>
+              <p><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></p>
+            </template>
+            <template v-else>
+              <p><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
+              <p><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ orderDraft.billTime }}天</strong></p>
+              <p><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></p>
+            </template>
           </section>
           <section v-show="!orderWorkbenchCollapsed" class="flow-navigation-card">
             <div class="flow-control-toggle"><List /><span>模块导航</span></div>
@@ -4258,9 +4329,9 @@
             </button>
           </section>
           <div v-show="!orderWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
-            <div><b>状态提醒</b><span>2项</span></div>
+            <div><b>状态提醒</b><span>{{ orderDraft.type === 'sale' ? '3项' : '2项' }}</span></div>
             <template v-if="orderDraft.type === 'purchase'"><button>预计到货日期需确认</button><button>付款附件尚未上传</button></template
-            ><template v-else><button>收货地址待确认</button><button>附件尚未上传</button></template>
+            ><template v-else><button @click="ElMessage.info('查看客户超期应收明细')">客户存在超期应收 ¥249,836.00</button><button @click="ElMessage.info('查看客户额度占用明细')">当前可用额度为负 ¥524,692.00</button><button @click="ElMessage.info('查看客户超期明细')">当前最长超期 34 天</button></template>
           </div>
         </aside>
       </section></Teleport
@@ -4275,6 +4346,7 @@
 <script setup>
 import GoodsDetailTabs from "../components/GoodsDetailTabs.vue";
 import PartyDetailDrawer from "../components/PartyDetailDrawer.vue";
+import CustomerCreditPanel from "../components/CustomerCreditPanel.vue";
 import {
   computed,
   defineComponent,
@@ -4829,6 +4901,7 @@ const contractRows = ref([
   },
   {
     code: "XSHT-202608-00018",
+    billTime: 30,
     type: "sale",
     typeLabel: "销售合同",
     contractMode: "upload",
@@ -4857,6 +4930,7 @@ const contractRows = ref([
   },
   {
     code: "XSHT-202608-00021",
+    billTime: 30,
     type: "sale",
     typeLabel: "销售合同",
     contractMode: "generated",
@@ -4870,6 +4944,7 @@ const contractRows = ref([
   },
   {
     code: "XS-KJXY-2026-0012",
+    billTime: 30,
     type: "sale",
     typeLabel: "销售框架协议",
     contractMode: "framework",
@@ -5071,10 +5146,26 @@ const orderDraft = reactive({
   prepaymentAllocated: 0,
   substitute: false,
   contractSituation: "generated",
+  frameworkCode: "KJXY-2026-0086",
   signatureLocation: "成都市高新区",
   contractTaxRate: "13%",
   paymentMethod: "款到发货",
   settlementTerms: "甲方付款后7日内发货，按实际验收数量结算。",
+  expectedReceiptDate: "2026-09-20",
+  invoiceMode: "先款后票",
+  invoiceDays: 7,
+  deliveryAgreement: "合同生效后7日内完成交付",
+  deliveryRequirement: "按订单指定地址分批交付",
+  technicalSupport: "需要",
+  afterSales: "按厂家标准提供售后服务",
+  warranty: "整机质保一年",
+  printingMethod: "电子用印",
+  printingSituation: "双方用印",
+  sealRequirements: "合同专用章",
+  autoSeal: true,
+  needMail: false,
+  receiveInfo: "",
+  contractRemark: "",
   remark: "",
 });
 const orderScrollArea = ref();
@@ -5879,8 +5970,8 @@ const contractModules = computed(() => [
       ]
     : []),
 ]);
-const purchaseContractTotals = computed(() => {
-  const total = goods.value.reduce((sum, row) => sum + Number(row.purchaseQuantity || 0) * Number(row.purchaseAmount || 0), 0);
+const contractTotals = computed(() => {
+  const total = goods.value.reduce((sum, row) => sum + Number(row.purchaseQuantity || 0) * Number(contractDraft.type === "purchase" ? row.purchaseAmount : row.salePrice || 0), 0);
   const rate = Number.parseFloat(contractDraft.taxRate) || 0;
   const net = Math.round(total / (1 + rate / 100) * 100) / 100;
   return { total, net, tax: Math.round((total - net) * 100) / 100,
@@ -6011,6 +6102,12 @@ const orderCreationMethodOptions = computed(() => {
   const rules = orderDraft.type === "purchase" ? purchaseCreationMethodRules : saleCreationMethodRules;
   return (rules[orderDraft.businessType] || []).map(([value, label]) => ({ value, label }));
 });
+const orderCreationMethodDisplay = computed(
+  () =>
+    orderCreationMethodOptions.value.find(
+      (item) => item.value === orderDraft.creationMethod,
+    )?.label || "—",
+);
 const orderUsesExistingContract = computed(() => orderDraft.creationMethod === "contract");
 const showGeneratedSaleContract = computed(
   () =>
@@ -6020,7 +6117,7 @@ const showGeneratedSaleContract = computed(
 const showOrderContract = computed(() => orderDraft.creationMethod === "contract");
 const showOrderBudget = computed(() =>
   orderDraft.type === "sale"
-    ? ["budget_later", "contract"].includes(orderDraft.creationMethod) || !!orderDraft.budgetCode
+    ? true
     : orderDraft.businessType === "产品导向分销" || !!orderDraft.budgetCode,
 );
 const showProjectFollowup = computed(() => orderDraft.businessType === "订单导向分销");
@@ -6103,6 +6200,16 @@ const orderModules = computed(() => [
     label: "附件与说明",
     status: "待完善",
   },
+  ...(orderPageReadonly.value && orderDraft.type === "sale"
+    ? [
+        {
+          id: "order-customer-credit",
+          order: showGeneratedSaleContract.value ? "07" : "06",
+          label: "客户资信信息",
+          status: "2项异常",
+        },
+      ]
+    : []),
 ]);
 const contractDetailModules = computed(() => {
   const purchase = activeContractPage.value?.data?.type === "purchase";
@@ -6126,22 +6233,31 @@ const contractDetailModules = computed(() => {
           },
         ]
       : []),
+    ...(!purchase
+      ? [
+          {
+            order: "05",
+            label: "客户资信信息",
+            status: "2项异常",
+          },
+        ]
+      : []),
     ...(activeContractPage.value?.data?.status !== "待提交"
       ? [
           {
-            order: purchase ? "06" : "05",
+            order: "06",
             label: "审批进度",
             status: approvalStatus,
           },
           {
-            order: purchase ? "07" : "06",
+            order: "07",
             label: "审批评论",
             status: `${approvalComments.value.length}条`,
           },
         ]
       : [
           {
-            order: purchase ? "06" : "05",
+            order: "06",
             label: "审批进度",
             status: approvalStatus,
           },
@@ -6151,6 +6267,10 @@ const contractDetailModules = computed(() => {
 const contractDetailBillTime = computed(() => {
   const value = activeContractPage.value?.data?.billTime;
   return value === null || value === undefined || value === "" ? "—" : `${value} 天`;
+});
+const contractDetailBillValue = computed(() => {
+  const value = activeContractPage.value?.data?.billTime;
+  return value === null || value === undefined || value === "" ? "—" : value;
 });
 const currentContractDetailModuleLabel = computed(
   () =>
@@ -6372,6 +6492,9 @@ function openContractDraft(row, type) {
 function openContractPrototype() {
   switchView("contract");
 }
+function openAiContractRecognition() {
+  ElMessage.info("与原AI识别内容一致");
+}
 function openContractPage(pageMode, type, row = null) {
   const budget =
       budgets.value.find((x) => x.code === row?.budgetCode) || budgets.value[1],
@@ -6500,9 +6623,9 @@ function openManualOrder(type) {
     budgetCode: "",
     contractCode: "",
     partyLabel: type === "purchase" ? "供应商" : "客户",
-    partyName: type === "purchase" ? "四川智联商贸有限公司" : "成都星海科技有限公司",
+    partyName: type === "purchase" ? "四川智联商贸有限公司" : "",
     ownerLabel: type === "purchase" ? "采购责任人" : "销售责任人",
-    ownerName: "当前用户",
+    ownerName: type === "purchase" ? "当前用户" : "",
     entity: source.entity,
     salesman: "当前用户",
     purchaseOwner: "当前用户",
@@ -6574,6 +6697,10 @@ function setOrderDayValue(key, value) {
   const digits = String(value ?? "").replace(/\D/g, "").slice(0, 4);
   orderDraft[key] = digits === "" ? "" : Math.min(3650, Number(digits));
 }
+function parseOrderMoney(value) {
+  const amount = Number(String(value ?? 0).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(amount) ? amount : 0;
+}
 function openOrderDetail(row, type) {
   const key = `order-detail-${type}-${row.code}`;
   if (!tabs.value.some((item) => item.key === key)) {
@@ -6607,6 +6734,9 @@ function openOrderDetail(row, type) {
     businessLine: row.businessUnit || "西南业务部",
     billTime: row.billTime || 30,
     invoiceType: row.invoiceType || "专票",
+    paymentMethod: row.paymentMethod || (Number(row.billTime) > 0 ? "账期结算" : "款到发货"),
+    priceProtection: parseOrderMoney(row.priceProtection),
+    discount: parseOrderMoney(row.discount),
   });
   confirmedOrderBusinessType.value = orderDraft.businessType;
   confirmedOrderCreationMethod.value = orderDraft.creationMethod;
@@ -6616,7 +6746,7 @@ function openOrderApproval(row, type) {
   const source = {
     code: row.code,
     owner: row.applicant,
-    supplier: row.enterprise,
+    supplier: row.enterprise || row.supplier,
     type: "订单导向分销",
     entity: "四川科瑞供应链管理有限公司",
   };
@@ -6644,7 +6774,7 @@ function openOrderApproval(row, type) {
     budgetCode: "YSGL-202608-02660",
     contractCode: type === "purchase" ? "CGHT-202608-00192" : "XSHT-202608-00018",
     partyLabel: type === "purchase" ? "供应商" : "客户",
-    partyName: row.enterprise,
+    partyName: row.enterprise || row.supplier,
     ownerLabel: type === "purchase" ? "采购责任人" : "销售责任人",
     ownerName: row.applicant,
     entity: source.entity,
@@ -6803,6 +6933,24 @@ function openBudgetFromContract() {
     activeView.value = "list";
     openDocument("detail", contractDraft.budget);
   }
+}
+function openOrderBudgetDetail() {
+  const budget = budgets.value.find((item) => item.code === orderDraft.budgetCode);
+  if (!budget) {
+    ElMessage.warning("未找到对应预算单");
+    return;
+  }
+  openDocument("detail", budget);
+}
+function openOrderContractDetail() {
+  const contract = contractRows.value.find(
+    (item) => item.code === orderDraft.contractCode,
+  );
+  if (!contract) {
+    ElMessage.warning("未找到对应合同单据");
+    return;
+  }
+  openContractPage("detail", contract.type, contract);
 }
 const partyDrawerVisible = ref(false);
 const partyDrawerName = ref("");
@@ -11281,9 +11429,12 @@ onMounted(() => {
 .budget-unified-summary > .title-block { padding-right: 0; }
 .budget-unified-summary .budget-summary-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .budget-summary-metrics > div { flex-wrap: wrap; gap: 5px 10px; padding: 0 16px; }
-.budget-summary-metrics .slow-sku-count { display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 10px; border-radius: 6px; background: #f3f5f7; }
-.budget-summary-metrics .slow-sku-count small { font-size: 13px; font-weight: 400; }
-.budget-summary-metrics .slow-sku-warning { color: #ad6800; background: #fff7e6; }
+.contract-detail-header-metrics .slow-sku-count,
+.contract-approval-metrics .slow-sku-count { display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 10px; border-radius: 6px; background: #f3f5f7; }
+.contract-detail-header-metrics .slow-sku-count small,
+.contract-approval-metrics .slow-sku-count small { font-size: 13px; font-weight: 400; }
+.contract-detail-header-metrics .slow-sku-warning,
+.contract-approval-metrics .slow-sku-warning { color: #ad6800; background: #fff7e6; }
 .budget-create-page .document-scroll > .section-card + .section-card { margin-top: 16px; }
 .budget-create-page > .document-layout,
 .budget-create-page > .document-layout > .document-scroll { background: #eef1f5; }
@@ -11353,7 +11504,8 @@ onMounted(() => {
 }
 
 .contract-edit-page .contract-field-group-title,
-.contract-detail-page .contract-field-group-title {
+.contract-detail-page .contract-field-group-title,
+.order-contract-form .contract-field-group-title {
   margin: 2px 0 10px;
   padding: 8px 10px;
   border-left: 3px solid #1687f8;
@@ -11640,7 +11792,7 @@ onMounted(() => {
 .order-edit-page .subsection-heading {
   box-sizing: border-box;
   min-height: 30px;
-  margin: 4px 0 12px;
+  margin: 28px 0 12px;
   padding: 4px 0 4px 10px;
   border: 0;
   border-left: 3px solid #9fc9f3;
@@ -11683,6 +11835,43 @@ onMounted(() => {
 }
 .linked-document-input :deep(.el-input__suffix) {
   white-space: nowrap;
+}
+.linked-document-control {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.linked-document-control :deep(.el-select) {
+  flex: 1;
+  min-width: 0;
+}
+.order-contract-form .contract-mode-cards {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.order-contract-form .contract-mode-cards :deep(.el-radio) {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 68px;
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid #dfe5ec;
+  border-radius: 5px;
+  background: #fff;
+  align-items: flex-start;
+}
+.order-contract-form .contract-mode-cards :deep(.el-radio__label) {
+  display: grid;
+  gap: 4px;
+  white-space: normal;
+}
+.order-contract-form .contract-mode-cards :deep(.el-radio__label span) {
+  color: #8793a0;
+  font-size: 12px;
+  font-weight: 400;
 }
 .order-readonly-value,
 .order-result-value {
@@ -12348,11 +12537,12 @@ onMounted(() => {
 .contract-subtitle,
 .contract-edit-page .contract-field-group-title,
 .contract-detail-page .contract-field-group-title,
+.order-contract-form .contract-field-group-title,
 .contract-edit-page .budget-basic-subtitle,
 .single-task-heading {
   box-sizing: border-box;
   min-height: 30px;
-  margin: 4px 0 12px;
+  margin: 28px 0 12px;
   padding: 4px 0 4px 10px;
   border: 0;
   border-left: 3px solid #9fc9f3;
@@ -12945,10 +13135,25 @@ onMounted(() => {
 .contract-key-indicators { margin-bottom: 12px; }
 .contract-key-indicators > div { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #edf0f3; }
 .contract-term-metric strong { color: #1677d2 !important; font-size: 17px !important; font-weight: 700 !important; }
-.document-page.contract-detail-page .contract-detail-header-metrics,
-.document-page.contract-detail-page .contract-approval-metrics { display: flex; flex-wrap: wrap; gap: 12px 0; width: auto; min-width: 0; }
-.document-page.contract-detail-page .contract-detail-header-metrics > div,
-.document-page.contract-detail-page .contract-approval-metrics > div { flex: 0 1 auto; min-width: 0; padding: 0 18px; }
+.document-page.contract-detail-page .contract-term-chip,
+.contract-key-indicators .contract-term-chip,
+.document-page.order-detail-page .contract-term-chip,
+.document-page.order-audit-page .contract-term-chip {
+  display: inline-flex; align-items: baseline; gap: 3px; padding: 2px 7px;
+  border: 1px solid #dbe8f5; border-radius: 4px; background: #f5f8fc;
+}
+.document-page.contract-detail-page .contract-term-chip b,
+.contract-key-indicators .contract-term-chip b,
+.document-page.order-detail-page .contract-term-chip b,
+.document-page.order-audit-page .contract-term-chip b { color: #1677d2; font-size: 15px; font-weight: 700; }
+.document-page.contract-detail-page .contract-term-chip small,
+.contract-key-indicators .contract-term-chip small,
+.document-page.order-detail-page .contract-term-chip small,
+.document-page.order-audit-page .contract-term-chip small { color: #526170; font-size: 12px; font-weight: 400; }
+:is(.document-page.budget-readonly-page, .document-page.contract-detail-page, .document-page.order-detail-page, .document-page.order-audit-page) .contract-detail-header-metrics,
+:is(.document-page.budget-readonly-page, .document-page.contract-detail-page, .document-page.order-detail-page, .document-page.order-audit-page) .contract-approval-metrics { display: flex; flex-wrap: wrap; gap: 12px 0; width: auto; min-width: 0; }
+:is(.document-page.budget-readonly-page, .document-page.contract-detail-page, .document-page.order-detail-page, .document-page.order-audit-page) .contract-detail-header-metrics > div,
+:is(.document-page.budget-readonly-page, .document-page.contract-detail-page, .document-page.order-detail-page, .document-page.order-audit-page) .contract-approval-metrics > div { flex: 0 1 auto; min-width: 0; padding: 0 18px; }
 .document-page.contract-detail-page .document-meta { flex-wrap: wrap; white-space: normal; }
 .document-page.contract-detail-page .section-card { margin-bottom: 16px; }
 .document-page.contract-edit-page .contract-prototype-content { display: flex; gap: 16px; }
@@ -12988,6 +13193,480 @@ onMounted(() => {
   .document-page.contract-edit-page > .contract-side-directory, .document-page.contract-detail-page > .contract-side-directory { display: none; }
   .document-page.contract-detail-page .contract-detail-summary-header > .title-block { padding-right: 0; }
   .document-page.contract-detail-page .budget-create-header-actions { position: static; margin-top: 10px; }
+}
+
+/* 详情与审批统一视觉：覆盖预算、合同及订单，只调整展示层级，不改变业务字段。 */
+.budget-readonly-page,
+.contract-detail-page,
+.order-detail-page,
+.order-audit-page {
+  background: #eef2f6;
+}
+.document-page.order-audit-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.document-page.order-audit-page.workbench-collapsed {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+.document-page.order-detail-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.document-page.order-detail-page.workbench-collapsed {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+.budget-readonly-page > .document-header,
+.contract-detail-page > .document-header,
+.order-detail-page > .document-header,
+.order-audit-page > .document-header {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
+  padding: 13px 22px 12px;
+  border-bottom: 1px solid #dfe6ee;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(37, 55, 74, 0.03);
+}
+.document-page.order-detail-page > .document-header,
+.document-page.order-audit-page > .document-header {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-height: 174px;
+  padding-top: 18px;
+  overflow: visible;
+}
+.document-page.order-detail-page > .document-header > .title-block,
+.document-page.order-audit-page > .document-header > .title-block {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+.budget-readonly-page .document-header .eyebrow,
+.contract-detail-page .document-header .eyebrow,
+.order-detail-page .document-header .eyebrow,
+.order-audit-page .document-header .eyebrow {
+  margin-bottom: 7px;
+  color: #607286;
+  font-size: 12px;
+  line-height: 22px;
+}
+.budget-readonly-page .document-header h1,
+.contract-detail-page .document-header h1,
+.order-detail-page .document-header h1,
+.order-audit-page .document-header h1 {
+  color: #243447;
+  font-size: 20px;
+  line-height: 28px;
+}
+.budget-readonly-page .document-meta,
+.contract-detail-page .document-meta,
+.order-detail-page .document-header > .title-block > p,
+.order-audit-page .document-header > .title-block > p {
+  color: #75869a;
+  font-size: 12px;
+  line-height: 20px;
+}
+.budget-readonly-page .document-scroll,
+.contract-detail-page .document-scroll,
+.order-detail-page .order-document-scroll,
+.order-audit-page .order-document-scroll {
+  padding: 14px 18px 48px;
+  background: #eef2f6;
+}
+.budget-readonly-page .section-card,
+.contract-detail-page .section-card,
+.order-detail-page .section-card,
+.order-audit-page .section-card {
+  scroll-margin-top: 16px;
+  margin-bottom: 14px;
+  padding: 15px 18px;
+  border: 1px solid #dde5ed;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(32, 48, 66, 0.025);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.budget-readonly-page .section-card:hover,
+.contract-detail-page .section-card:hover,
+.order-detail-page .section-card:hover,
+.order-audit-page .section-card:hover {
+  border-color: #cdd9e5;
+  box-shadow: 0 3px 10px rgba(32, 48, 66, 0.045);
+}
+.budget-readonly-page .section-heading,
+.contract-detail-page .section-heading,
+.order-detail-page .section-heading,
+.order-audit-page .section-heading {
+  min-height: 30px;
+  margin-bottom: 14px;
+  padding-bottom: 11px;
+  border-bottom-color: #e9eef3;
+}
+.budget-readonly-page .section-heading h2,
+.contract-detail-page .section-heading h2,
+.order-detail-page .section-heading h2,
+.order-audit-page .section-heading h2 {
+  color: #2d3e50;
+  font-size: 15px;
+  font-weight: 650;
+}
+.order-detail-page article :deep(.el-form-item),
+.order-audit-page article :deep(.el-form-item) {
+  display: block;
+  min-height: 45px;
+  margin-bottom: 9px;
+}
+.order-detail-page article :deep(.el-form-item__content),
+.order-audit-page article :deep(.el-form-item__content) {
+  display: flex;
+  justify-content: flex-start;
+  min-width: 0;
+  line-height: 23px;
+  text-align: left;
+}
+.order-detail-page article :deep(.el-form-item__label),
+.order-audit-page article :deep(.el-form-item__label) {
+  padding: 0 0 4px;
+  color: #778696;
+  font-size: 12px;
+  line-height: 18px;
+}
+.order-detail-page article :deep(.el-input__wrapper),
+.order-detail-page article :deep(.el-select__wrapper),
+.order-audit-page article :deep(.el-input__wrapper),
+.order-audit-page article :deep(.el-select__wrapper) {
+  min-height: 23px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.order-detail-page article :deep(.el-input.is-disabled .el-input__inner),
+.order-detail-page article :deep(.el-select__selected-item),
+.order-audit-page article :deep(.el-input.is-disabled .el-input__inner),
+.order-audit-page article :deep(.el-select__selected-item),
+.order-detail-page .order-readonly-value,
+.order-audit-page .order-readonly-value {
+  color: #2f3d4c;
+  font-size: 13px;
+  font-weight: 500;
+  -webkit-text-fill-color: #2f3d4c;
+}
+.order-detail-page article :deep(.el-input__suffix),
+.order-audit-page article :deep(.el-input__suffix) {
+  display: none;
+}
+.order-detail-page .subsection-heading,
+.order-audit-page .subsection-heading {
+  margin: 28px 0 12px;
+  padding: 4px 0 4px 10px;
+  border-left: 3px solid #9fc9f3;
+  background: transparent;
+  color: #4b5d70;
+  font-size: 13px;
+}
+.order-detail-page .order-title-summary,
+.order-audit-page .order-title-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e7edf3;
+}
+.order-detail-page .order-title-summary > div,
+.order-audit-page .order-title-summary > div {
+  border-top: 0;
+}
+.order-detail-page .order-title-summary > div:nth-child(3),
+.order-audit-page .order-title-summary > div:nth-child(3) {
+  border-right: 1px solid #e7edf3;
+}
+.order-detail-page .order-title-summary > div:last-child,
+.order-audit-page .order-title-summary > div:last-child {
+  border-right: 0;
+}
+.order-detail-page .document-header h1,
+.order-audit-page .document-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.document-page.order-detail-page > .contract-detail-summary-header > .title-block,
+.document-page.order-audit-page > .contract-detail-summary-header > .title-block {
+  padding-right: 0;
+}
+.order-detail-page > .document-header .order-summary-eyebrow,
+.order-audit-page > .document-header .order-summary-eyebrow {
+  min-height: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  line-height: 22px;
+}
+.order-summary-eyebrow > span {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 3px;
+  background: #edf5fd;
+}
+.document-page.contract-detail-page .document-header .eyebrow > span,
+.document-page.order-detail-page .document-header .order-summary-eyebrow > span,
+.document-page.order-audit-page .document-header .order-summary-eyebrow > span {
+  min-height: 22px;
+  padding: 0 10px;
+  border: 0;
+  border-right: 1px solid #dce4ec;
+  border-radius: 0;
+  background: transparent;
+  color: #607286;
+}
+.document-page.contract-detail-page .document-header .eyebrow > span:first-child,
+.document-page.order-detail-page .document-header .order-summary-eyebrow > span:first-child,
+.document-page.order-audit-page .document-header .order-summary-eyebrow > span:first-child {
+  padding-left: 0;
+}
+.document-page.contract-detail-page .document-header .eyebrow > span:last-child,
+.document-page.order-detail-page .document-header .order-summary-eyebrow > span:last-child,
+.document-page.order-audit-page .document-header .order-summary-eyebrow > span:last-child {
+  border-right: 0;
+}
+.order-detail-page .order-detail-meta,
+.order-audit-page .order-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 0;
+  min-height: 24px;
+  white-space: normal;
+}
+.order-detail-page .order-detail-meta > span,
+.order-audit-page .order-detail-meta > span {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 18px;
+  padding: 0 18px 0 0;
+  border: 0;
+}
+.order-detail-page .order-detail-meta :deep(.el-link),
+.order-audit-page .order-detail-meta :deep(.el-link) {
+  height: 20px;
+  line-height: 20px;
+  vertical-align: middle;
+}
+.document-page.order-detail-page .contract-detail-header-metrics,
+.document-page.order-audit-page .contract-approval-metrics {
+  min-height: 44px;
+  flex-wrap: nowrap;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.document-page.order-detail-page .contract-detail-header-metrics > div:first-child,
+.document-page.order-audit-page .contract-approval-metrics > div:first-child,
+.document-page.budget-readonly-page .contract-detail-header-metrics > div:first-child,
+.document-page.contract-detail-page .contract-detail-header-metrics > div:first-child,
+.document-page.contract-detail-page .contract-approval-metrics > div:first-child {
+  padding-left: 0;
+}
+.document-page.order-detail-page .contract-detail-header-metrics > div:last-child,
+.document-page.order-audit-page .contract-approval-metrics > div:last-child {
+  border-right: 0;
+}
+@media (max-width: 1180px) {
+  .document-page.order-detail-page .contract-detail-header-metrics,
+  .document-page.order-audit-page .contract-approval-metrics {
+    flex-wrap: wrap;
+    min-height: auto;
+    overflow: visible;
+  }
+}
+.order-detail-page .order-detail-meta > span:first-child,
+.order-audit-page .order-detail-meta > span:first-child {
+  padding-left: 0;
+}
+.order-detail-page .order-detail-meta > span:last-child,
+.order-audit-page .order-detail-meta > span:last-child {
+  margin-right: 0;
+  padding-right: 0;
+}
+.order-contract-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 0;
+  min-width: 0;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid #e7ebf0;
+}
+.order-contract-summary > div {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+  padding: 0 18px;
+  border-right: 1px solid #e4e8ed;
+}
+.order-contract-summary > div:first-child { padding-left: 0; }
+.order-contract-summary > div:last-child { border-right: 0; }
+.order-contract-summary span {
+  color: #7c8997;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.order-contract-summary strong {
+  color: #283848;
+  font-size: 15px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.order-detail-page > .order-side-directory,
+.order-audit-page > .order-side-directory {
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  inset: auto;
+  width: auto;
+  min-height: 0;
+}
+.document-page.order-detail-page > .order-document-scroll,
+.document-page.order-audit-page > .order-document-scroll {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  margin-right: 0;
+}
+.flow-navigation-card .flow-control-item,
+.contract-side-directory .flow-control-item,
+.order-side-directory .flow-control-item {
+  position: relative;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.approval-progress-table :deep(.el-table__row) {
+  transition: background-color 0.15s ease;
+}
+.approval-comments-card .approval-comment-item:last-child {
+  border-bottom: 0;
+}
+.approval-operation-dock.compact {
+  border-color: #d5e1ec;
+  border-top: 2px solid #7db7ee;
+  box-shadow: 0 -6px 20px rgba(35, 55, 75, 0.1);
+}
+.order-audit-page .section-card {
+  pointer-events: auto;
+}
+@media (max-width: 1180px) {
+  .document-page.order-audit-page,
+  .document-page.order-audit-page.workbench-collapsed,
+  .document-page.order-detail-page,
+  .document-page.order-detail-page.workbench-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .document-page.order-detail-page > .order-side-directory,
+  .document-page.order-audit-page > .order-side-directory { display: none; }
+  .budget-readonly-page .document-scroll,
+  .contract-detail-page .document-scroll,
+  .order-detail-page .order-document-scroll,
+  .order-audit-page .order-document-scroll { padding: 12px 14px 46px; }
+}
+@media (min-width: 1181px) and (max-width: 1440px) {
+  .document-page.order-audit-page,
+  .document-page.order-detail-page { grid-template-columns: minmax(0, 1fr) 260px; }
+}
+@media (min-width: 1181px) and (max-width: 1280px) {
+  .document-page.order-audit-page,
+  .document-page.order-detail-page { grid-template-columns: minmax(0, 1fr) 220px; }
+}
+
+/* 新建销售订单：沿用新建预算/合同的白色标题区和等高字段网格。 */
+.order-edit-page:not(.order-detail-page):not(.order-audit-page) {
+  background: #eef1f5;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page) > .document-header {
+  position: relative;
+  z-index: 1;
+  background: #fff !important;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page) > .order-document-scroll {
+  padding: 14px 16px 28px;
+  background: #eef1f5;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page) .section-card {
+  margin-bottom: 14px;
+  border-color: #dce4ec;
+  background: #fff;
+}
+.order-edit-page .sale-settlement-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+.order-edit-page .sale-settlement-grid :deep(.el-form-item) {
+  display: grid;
+  grid-template-rows: 42px 34px;
+  margin-bottom: 0;
+}
+.order-edit-page .sale-settlement-grid :deep(.el-form-item__label) {
+  box-sizing: border-box;
+  min-height: 42px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 7px;
+  line-height: 17px;
+}
+.order-edit-page .sale-settlement-grid :deep(.el-form-item__content) {
+  min-height: 34px;
+  align-items: center;
+}
+.order-edit-page .sale-settlement-grid .order-result-value {
+  min-height: 34px;
+  padding: 7px 0;
+  text-align: left;
+}
+.order-edit-page .order-money-input :deep(.el-input__inner) {
+  text-align: left;
+}
+.order-detail-page .document-field-link,
+.order-audit-page .document-field-link {
+  color: #2f3d4c;
+  font-size: 13px;
+  font-weight: 500;
+}
+.order-detail-page .document-field-link:hover,
+.order-audit-page .document-field-link:hover {
+  color: #1687f8;
+}
+.order-edit-page .order-attachment-layout {
+  grid-template-columns: minmax(360px, 0.85fr) minmax(480px, 1.75fr);
+  gap: 32px;
+}
+.order-edit-page .order-attachment-layout :deep(.el-upload-dragger) {
+  height: 132px;
+  padding: 29px 16px;
+}
+.order-edit-page .order-attachment-layout :deep(.el-textarea__inner) {
+  min-height: 132px !important;
+}
+@media (max-width: 1360px) {
+  .order-edit-page .sale-settlement-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 12px;
+  }
+}
+@media (max-width: 960px) {
+  .order-edit-page .order-attachment-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
 }
 
 </style>
