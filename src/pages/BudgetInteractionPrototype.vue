@@ -77,13 +77,6 @@
             v-model="listStatus"
             :options="['全部', '审批中', '审批完成', '草稿']"
           />
-          <el-badge
-            :value="pendingContracts.length"
-            :hidden="!pendingContracts.length"
-            ><el-button @click="pendingContractVisible = true"
-              >待提交合同</el-button
-            ></el-badge
-          >
           <el-input
             v-model="keyword"
             clearable
@@ -121,12 +114,6 @@
                 effect="light"
                 >{{ row.status }}</el-tag
               >
-              <el-link
-                v-else-if="column.prop === 'modifyRecord' && row.version"
-                type="primary"
-                @click="openModificationRecords(row)"
-                >查看修改记录</el-link
-              >
               <span v-else>{{ row[column.prop] ?? "-" }}</span>
             </template>
           </el-table-column>
@@ -160,11 +147,6 @@
                       v-if="row.status === '审批完成'"
                       @click="openOrderDraft(row, 'sale')"
                       >创建销售订单</el-dropdown-item
-                    ><el-dropdown-item
-                      v-if="row.version"
-                      divided
-                      @click="openModificationRecords(row)"
-                      >预算修改记录</el-dropdown-item
                     ></el-dropdown-menu
                   ></template
                 ></el-dropdown
@@ -1025,9 +1007,6 @@
                   ><el-form-item label="预算有效期"
                     ><el-input model-value="60 天" /></el-form-item></el-col
                 ><el-col :span="8"
-                  ><el-form-item label="市场环境说明"
-                    ><el-input model-value="价格稳定" /></el-form-item></el-col
-                ><el-col :span="8"
                   ><el-form-item label="预计库存周期"
                     ><el-input model-value="45 天" /></el-form-item></el-col
                 ><el-col
@@ -1061,13 +1040,12 @@
               <div><span>预计毛利率</span><strong>17.39%</strong></div>
             </div><el-collapse v-model="contractDetailBudgetPanels" class="secondary-contract-info detail-budget-collapse budget-detail-accordion"
               ><el-collapse-item name="budget-full" class="budget-disclosure-item"
-                ><template #title><div class="budget-disclosure-title"><span>{{ contractDetailBudgetPanels.includes('budget-full') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span><small>基础信息、预算计划、收益测算、附件与说明</small></div></template
+                ><template #title><div class="budget-disclosure-title"><span>{{ contractDetailBudgetPanels.includes('budget-full') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span><small>基础信息、预算计划（含附件）、收益测算</small></div></template
                 ><h4 class="embedded-budget-group-title">基础信息</h4>
                 <div class="embedded-budget-basic-grid">
                   <div><span>预算单编号</span><el-link type="primary" :underline="false" @click="openBudgetByCode(activeContractPage.data.budgetCode)">{{ activeContractPage.data.budgetCode }}</el-link></div>
                   <div><span>发起方</span><strong>预算单</strong></div>
                   <div><span>预算有效期</span><strong>60 天</strong></div>
-                  <div><span>市场环境说明</span><strong>价格稳定</strong></div>
                   <div><span>预计库存周期</span><strong>45 天</strong></div>
                 </div><div class="split-panel contract-budget-plan">
                   <div>
@@ -1087,6 +1065,10 @@
                             ><el-input
                               model-value="45 天" /></el-form-item></el-col
                         ><el-col :span="12"
+                          ><el-form-item label="市场环境说明"
+                            ><el-input
+                              model-value="价格稳定" /></el-form-item></el-col
+                        ><el-col :span="12"
                           ><el-form-item label="预计项目单毛利回补总额"
                             ><el-input
                               model-value="¥0.00" /></el-form-item></el-col
@@ -1101,6 +1083,7 @@
                             ><el-input
                               model-value="重点业务" /></el-form-item></el-col></el-row
                     ></el-form>
+                    <div class="embedded-budget-attachments"><h5>附件（{{ budgetAttachmentExamples.length }}）</h5><div class="budget-file-list"><div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row"><Document /><div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div></div>
                   </div>
                   <div class="metrics">
                     <h4 class="contract-subtitle">收益测算</h4>
@@ -1116,20 +1099,7 @@
                       </div>
                     </div>
                   </div>
-                </div><h4 class="embedded-budget-group-title">附件与说明</h4><div class="source-budget-attachments source-budget-separated">
-                    <div class="source-budget-files">
-                      <h4>附件（{{ budgetAttachmentExamples.length }}）</h4>
-                      <div class="budget-file-list">
-                        <div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row">
-                          <Document />
-                          <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
-                          <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
-                          <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="source-budget-note"><h4>补充说明</h4><p>{{ activeContractPage.data.budget?.supplement || '—' }}</p></div>
-                  </div></el-collapse-item
+                </div></el-collapse-item
               ></el-collapse
             >
           </article>
@@ -1913,8 +1883,9 @@
                         :required="field.required"
                       >
                         <el-link v-if="!isEditing && field.key === 'customer'" type="primary" @click="openSupplierDetail(form.dynamic[field.key], 'customer')">{{ form.dynamic[field.key] || '—' }}</el-link>
-                        <el-select
-                          v-else-if="field.kind === 'select'"
+                        <div v-else-if="field.kind === 'select'" :class="['entity-select-with-risk', { 'has-risk': field.key === 'customer' && form.dynamic[field.key] }]">
+                          <el-tooltip v-if="field.key === 'customer' && form.dynamic[field.key]" content="该客户在黑名单中" placement="top"><span class="entity-risk-icon">!</span></el-tooltip>
+                          <el-select
                           v-model="form.dynamic[field.key]"
                           :placeholder="`请选择${field.label}`"
                           ><el-option
@@ -1922,7 +1893,7 @@
                             :key="option"
                             :label="option"
                             :value="option"
-                        /></el-select>
+                        /></el-select></div>
                         <el-input
                           v-else-if="field.kind === 'number' && isDayField(field.key)"
                           :model-value="String(form.dynamic[field.key] ?? '')"
@@ -1959,10 +1930,12 @@
                 <el-row :gutter="20">
                   <el-col :span="8"
                     ><el-form-item label="供应商" required
-                      ><el-select v-if="isEditing" v-model="form.supplier"
+                      ><div v-if="isEditing" :class="['entity-select-with-risk', { 'has-risk': form.supplier }]">
+                        <el-tooltip v-if="form.supplier" content="该供应商在黑名单中" placement="top"><span class="entity-risk-icon">!</span></el-tooltip>
+                        <el-select v-model="form.supplier"
                         ><el-option
                           label="成都星海科技有限公司"
-                          value="成都星海科技有限公司" /></el-select
+                          value="成都星海科技有限公司" /></el-select></div
                       ><el-link
                         v-else
                         class="detail-entity-link" @click="openSupplierDetail(form.supplier)"
@@ -2114,6 +2087,31 @@
                             show-word-limit
                             placeholder="请输入利润说明（选填）" /></el-form-item
                       ></el-col>
+                      <el-col :span="24" class="budget-plan-attachment">
+                        <div class="budget-plan-attachment-label">附件</div>
+                        <el-upload
+                          v-if="isEditing"
+                          drag
+                          action="#"
+                          :auto-upload="false"
+                          multiple
+                          :limit="5"
+                          :on-change="handleAttachmentChange"
+                          accept=".jpg,.jpeg,.png,.pdf,.xls,.xlsx"
+                        >
+                          <div class="upload-action"><Plus /><b>上传附件</b></div>
+                          <div class="upload-help">支持 .jpg、.png、.pdf、.xls、.xlsx 等，单个文件不超过20MB</div>
+                        </el-upload>
+                        <div v-else class="budget-file-list">
+                          <div v-for="file in budgetAttachmentExamples.slice(0, attachmentsExpanded ? budgetAttachmentExamples.length : 2)" :key="file.name" class="file-row">
+                            <Document />
+                            <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
+                            <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
+                            <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
+                          </div>
+                          <el-button v-if="budgetAttachmentExamples.length > 2" class="budget-plan-attachment-more" link type="primary" @click="attachmentsExpanded = !attachmentsExpanded">{{ attachmentsExpanded ? '收起附件' : `查看全部（${budgetAttachmentExamples.length}）` }}<ArrowDown :class="{ rotated: attachmentsExpanded }" /></el-button>
+                        </div>
+                      </el-col>
                     </el-row>
                   </el-form>
                 </div>
@@ -2186,17 +2184,7 @@
                       v-model="row.purchaseQuantity"
                       :min="0"
                       controls-position="right"
-                    /><el-link
-                      v-if="isEditing"
-                      type="primary"
-                      @click="budgetGoodsTabs?.openItem(row)"
-                      >查看</el-link
-                    ><el-link
-                      v-else
-                      type="primary"
-                      @click="budgetGoodsTabs?.openItem(row)"
-                      >{{ row.purchaseQuantity }}</el-link
-                    ></div></template
+                    /><span v-else>{{ row.purchaseQuantity }}</span></div></template
                   ></el-table-column
                 >
                 <el-table-column v-if="budgetGoodsShowCurrentStock" label="当前商品库存量" width="135" align="right"
@@ -2288,79 +2276,13 @@
               ></el-tabs>
             </article>
 
-            <article id="attachments" class="section-card">
-              <SectionTitle
-                :number="isEditing ? '4' : '05'"
-                title="附件与说明"
-              />
-              <div
-                v-if="prototypeVariant === 'flow-template'"
-                class="auxiliary-module-control"
-              >
-                <div><b>辅助信息</b><span>附件最多5个，补充说明选填</span></div>
-                <el-button
-                  link
-                  type="primary"
-                  @click="attachmentsExpanded = !attachmentsExpanded"
-                  >{{ attachmentsExpanded ? "收起" : "展开填写"
-                  }}<ArrowDown :class="{ rotated: attachmentsExpanded }"
-                /></el-button>
-              </div>
-              <div
-                v-show="
-                  prototypeVariant !== 'flow-template' || attachmentsExpanded
-                "
-                class="attachment-layout"
-              >
-                <div class="attachment-column">
-                  <h3>附件</h3>
-                  <el-upload
-                    v-if="isEditing"
-                    drag
-                    action="#"
-                    :auto-upload="false"
-                    multiple
-                    :limit="5"
-                    :on-change="handleAttachmentChange"
-                    accept=".jpg,.jpeg,.png,.pdf,.xls,.xlsx"
-                  >
-                    <div class="upload-action"><Plus /><b>上传附件</b></div>
-                    <div class="upload-help">
-                      支持 .jpg、.png、.pdf、.xls、.xlsx
-                      等，最多5个，单个文件不超过20MB
-                    </div>
-                  </el-upload>
-                  <div v-else class="budget-file-list">
-                    <div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row">
-                      <Document />
-                      <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
-                      <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
-                      <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
-                    </div>
-                  </div>
-                </div>
-                <div class="note-column">
-                  <h3>补充说明</h3>
-                  <el-input
-                    v-model="form.supplement"
-                    type="textarea"
-                    :rows="5"
-                    maxlength="500"
-                    show-word-limit
-                    :disabled="!isEditing"
-                    placeholder="请输入补充说明（选填）"
-                  />
-                </div>
-              </div>
-            </article>
-
             <article
               v-if="mode === 'audit' || mode === 'detail'"
               id="approval-progress"
               class="section-card"
             >
               <SectionTitle
-                number="06"
+                :number="mode === 'detail' ? '05' : '04'"
                 title="审批进度"
               />
               <el-table
@@ -2439,7 +2361,7 @@
               class="section-card approval-comments-card"
             >
               <SectionTitle
-                number="07"
+                :number="mode === 'detail' ? '06' : '05'"
                 title="审批评论"
               />
               <div class="approval-comment-stream">
@@ -2488,7 +2410,7 @@
                 >保存草稿</el-button
               >
               <el-button v-if="isEditing" type="primary" @click="submitDocument"
-                >保存并提交</el-button
+                >提交审批</el-button
               >
             </footer>
             <footer
@@ -2664,91 +2586,13 @@
     </el-dialog>
     <el-dialog
       v-model="productDialogVisible"
-      title="选择商品"
-      width="1080px"
-      top="7vh"
+      title="添加商品"
+      width="520px"
       :close-on-click-modal="false"
     >
-      <div class="product-dialog-toolbar">
-        <el-input
-          v-model="productFilters.keyword"
-          clearable
-          :prefix-icon="Search"
-          placeholder="SKU编码 / SKU名称 / SPU名称"
-        />
-        <el-select
-          v-model="productFilters.businessUnit"
-          clearable
-          placeholder="全部业务单元"
-          ><el-option label="西南业务部" value="西南业务部" /><el-option
-            label="华东业务部"
-            value="华东业务部"
-        /></el-select>
-        <el-checkbox v-model="productFilters.inStockOnly"
-          >仅看有库存</el-checkbox
-        >
-      </div>
-      <el-table
-        ref="productTableRef"
-        :data="filteredProductOptions"
-        border
-        height="430"
-        row-key="skuCode"
-        @selection-change="productSelection = $event"
-      >
-        <el-table-column
-          type="selection"
-          width="50"
-          :selectable="isProductSelectable"
-          reserve-selection
-        />
-        <el-table-column
-          prop="spuName"
-          label="SPU名称"
-          min-width="170"
-          show-overflow-tooltip
-        />
-        <el-table-column prop="skuCode" label="SKU编码" min-width="150" />
-        <el-table-column
-          prop="skuName"
-          label="SKU名称"
-          min-width="220"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="specModel"
-          label="配置说明"
-          min-width="160"
-          show-overflow-tooltip
-        />
-        <el-table-column prop="businessUnit" label="业务单元" width="120" />
-        <el-table-column
-          prop="stock"
-          label="当前库存"
-          width="100"
-          align="right"
-        />
-        <el-table-column label="状态" width="100"
-          ><template #default="{ row }"
-            ><el-tag v-if="isProductAdded(row)" type="info">已添加</el-tag
-            ><el-tag v-else-if="row.stock > 0" type="success">可选择</el-tag
-            ><el-tag v-else type="warning">无库存</el-tag></template
-          ></el-table-column
-        >
-      </el-table>
-      <div class="product-selection-summary">
-        已选择 <b>{{ selectableProductSelection.length }}</b> 项<span
-          >已加入采销明细的商品不可重复选择</span
-        >
-      </div>
+      <div class="reuse-original-dialog-note"><InfoFilled /><span>沿用原商品选择弹窗，本次不做修改</span></div>
       <template #footer
-        ><el-button @click="productDialogVisible = false">取消</el-button
-        ><el-button
-          type="primary"
-          :disabled="!selectableProductSelection.length"
-          @click="confirmProductSelection"
-          >确认添加（{{ selectableProductSelection.length }}）</el-button
-        ></template
+        ><el-button type="primary" @click="productDialogVisible = false">知道了</el-button></template
       >
     </el-dialog>
     <el-dialog v-model="advancedSearchVisible" title="高级搜索" width="720px">
@@ -2870,14 +2714,6 @@
               }}
             </h1>
           </div>
-          <div
-            v-if="contractPageMode === 'create'"
-            class="budget-create-header-actions"
-          >
-            <el-button type="primary" plain @click="openAiContractRecognition">
-              AI识别并填充
-            </el-button>
-          </div>
         </header>
         <div
           ref="contractScrollArea"
@@ -2898,7 +2734,7 @@
               data-contract-module="contract-basic-section"
               class="contract-block"
             >
-              <h3><b>01</b>基础信息</h3>
+              <h3><b>01</b>基础信息<el-button v-if="contractPageMode === 'create'" class="module-title-action" type="primary" plain @click="openAiContractRecognition">AI识别并填充</el-button></h3>
               <el-form label-position="top"
                 ><el-row :gutter="16">
                   <el-col :span="8"
@@ -2959,10 +2795,17 @@
             <section id="contract-related-section" data-contract-module="contract-related-section" class="contract-block contract-related-group">
               <h3><b>02</b>关联单据信息</h3>
             <section class="contract-block budget-reference-block">
-              <h4 class="contract-content-subtitle budget-basic-subtitle">
+              <div v-if="contractDraft.type === 'purchase'" class="linked-budget-summary contract-budget-title-summary">
+                <div><span>关联预算单</span><el-link type="primary" :underline="false" @click="openBudgetFromContract">{{ contractDraft.budget?.code }}</el-link></div>
+                <div><span>预计销售收入</span><strong>¥356,000.00</strong></div>
+                <div><span>预计采购成本</span><strong>¥299,000.00</strong></div>
+                <div><span>预计毛利</span><strong>¥61,900.00</strong></div>
+                <div><span>预计毛利率</span><strong>17.39%</strong></div>
+              </div>
+              <h4 v-if="contractDraft.type !== 'purchase'" class="contract-content-subtitle budget-basic-subtitle">
                 预算基础信息
               </h4>
-              <el-form label-position="top"
+              <el-form v-if="contractDraft.type !== 'purchase'" label-position="top"
                 ><el-row :gutter="20"
                   ><el-col :span="8"
                     ><el-form-item label="预算单编号"
@@ -2977,11 +2820,6 @@
                   ><el-col :span="8"
                     ><el-form-item label="预算有效期（天）"
                       ><div class="contract-readonly-value emphasized-day-value">60 天</div></el-form-item></el-col
-                  ><el-col :span="8"
-                    ><el-form-item label="市场环境说明"
-                      ><el-input
-                        model-value="价格稳定"
-                        disabled /></el-form-item></el-col
                   ><el-col
                     v-for="field in contractBudgetBasicFields"
                     :key="field.key"
@@ -3000,9 +2838,18 @@
                   <template #title
                     ><div class="budget-disclosure-title">
                       <span>{{ contractCreateBudgetPanels.includes('budget-plan') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span
-                      ><small>采购账期、付款日期、毛利及利润说明</small>
+                      ><small>基础信息、预算计划（含附件）、收益测算</small>
                     </div></template
                   >
+                  <template v-if="contractDraft.type === 'purchase'">
+                    <h4 class="embedded-budget-group-title">基础信息</h4>
+                    <div class="embedded-budget-basic-grid">
+                      <div><span>预算单编号</span><el-link type="primary" :underline="false" @click="openBudgetFromContract">{{ contractDraft.budget?.code }}</el-link></div>
+                      <div><span>预算有效期</span><strong>60 天</strong></div>
+                      <div><span>业务类型</span><strong>{{ businessTypeDisplay(contractDraft.budget?.type) }}</strong></div>
+                      <div><span>业务单元</span><strong>{{ contractDraft.businessLine }}</strong></div>
+                    </div>
+                  </template>
                   <div class="split-panel contract-budget-plan">
                     <div>
                       <h4 class="contract-subtitle">预算计划</h4>
@@ -3026,6 +2873,10 @@
                               ><div class="contract-readonly-value emphasized-day-value">45 天</div></el-form-item
                           ></el-col>
                           <el-col :span="12"
+                            ><el-form-item label="市场环境说明"
+                              ><el-input model-value="价格稳定" /></el-form-item
+                          ></el-col>
+                          <el-col :span="12"
                             ><el-form-item label="预计项目单毛利回补总额"
                               ><el-input model-value="¥0.00" /></el-form-item
                           ></el-col>
@@ -3042,6 +2893,7 @@
                           ></el-col>
                         </el-row>
                       </el-form>
+                      <div class="embedded-budget-attachments"><h5>附件（{{ budgetAttachmentExamples.length }}）</h5><div class="budget-file-list"><div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row"><Document /><div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div></div>
                     </div>
                     <div class="metrics">
                       <h4 class="contract-subtitle">收益测算</h4>
@@ -3059,27 +2911,6 @@
                     </div>
                   </div>
                 </el-collapse-item>
-                <el-collapse-item name="budget-attachments">
-                  <template #title
-                    ><div class="related-budget-collapse-title">
-                      <strong>预算附件与说明</strong
-                      ><span>附件 {{ budgetAttachmentExamples.length }} 项 · 说明 1 条</span>
-                    </div></template
-                  >
-                  <div class="source-budget-attachments source-budget-separated">
-                    <div class="source-budget-files">
-                      <h4>附件（{{ budgetAttachmentExamples.length }}）</h4>
-                      <div class="budget-file-list">
-                        <div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row">
-                          <Document />
-                          <div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div>
-                          <el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button>
-                          <el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="source-budget-note"><h4>补充说明</h4><p>{{ contractDraft.budget?.supplement || '价格及毛利测算依据预算单，采购前请核对供应商最新报价及低流速商品销售计划。' }}</p></div>
-                  </div></el-collapse-item>
               </el-collapse>
             </section>
             </section>
@@ -3138,7 +2969,7 @@
                           ? row.availableQuantity
                           : undefined
                       "
-                      controls-position="right" /><el-link type="primary" @click="contractCreateGoodsTabs?.openItem(row)">查看</el-link></div></template></el-table-column
+                      controls-position="right" /></div></template></el-table-column
                 ><template v-if="contractDraft.type === 'purchase'"
                   ><el-table-column
                     prop="lastPurchasePrice"
@@ -3488,21 +3319,21 @@
                 v-if="contractDraft.contractMode === 'generated'"
                 class="generate-contract-action contract-info-generate-action"
               >
-                <span>合同信息填写完成后，可生成合同文件</span>
-                <el-button type="primary" @click="generateContractFile">{{ contractWorkingFiles.some(file => file.source === 'generated') ? "重新生成合同" : "生成合同" }}</el-button>
+                <div class="contract-generate-field-label">合同文件生成</div>
+                <div class="contract-generate-field-content">
+                  <el-button type="primary" @click="generateContractFile">{{ contractWorkingFiles.some(file => file.source === 'generated') ? "重新生成合同" : "生成合同" }}</el-button>
+                  <span>根据以上合同信息生成模板文件，并自动加入合同文件列表</span>
+                </div>
               </div>
             </section>
             <section
               id="contract-files-section"
               class="contract-block contract-files-block"
             >
-              <h4 class="contract-content-subtitle">
-                {{
-                  contractDraft.contractMode === "framework"
-                    ? "订单证明文件"
-                    : "合同文件"
-                }}
-              </h4>
+              <div class="contract-file-section-heading">
+                <h4 class="contract-content-subtitle">{{ contractDraft.contractMode === "framework" ? "订单证明文件" : "合同文件" }}</h4>
+                <el-upload v-if="contractDraft.contractMode === 'framework'" action="#" :auto-upload="false" :show-file-list="false" :on-change="handleOrderProofUpload"><el-button type="primary" :icon="Upload">上传订单证明文件</el-button></el-upload>
+              </div>
               <el-form
                 v-if="contractDraft.contractMode === 'upload'"
                 label-position="top"
@@ -3519,27 +3350,10 @@
                 ></el-form
               >
               <div
-                v-if="contractDraft.contractMode === 'upload' || contractDraft.contractMode === 'generated'"
-                class="compact-file-upload"
-              >
-                <el-upload
-                  action="#" :auto-upload="false" :show-file-list="false" :on-change="handleContractFileUpload"
-                  ><el-button type="primary" plain :icon="Upload">上传合同文件</el-button></el-upload
-                ><span>支持上传多份合同文件，上传后逐份进行AI识别</span>
-              </div>
-              <div
                 v-if="contractDraft.contractMode === 'framework'"
                 class="compact-file-upload"
               >
-                <el-upload
-                  action="#"
-                  :auto-upload="false"
-                  :show-file-list="false"
-                  :on-change="handleOrderProofUpload"
-                  ><el-button type="primary" :icon="Upload"
-                    >上传订单证明文件</el-button
-                  ></el-upload
-                ><span>只上传订单证明文件，框架协议附件从所选协议自动带出</span>
+                <span>只上传订单证明文件，框架协议附件从所选协议自动带出</span>
               </div>
               <div
                 v-if="
@@ -3552,6 +3366,10 @@
                 <InfoFilled /><span
                   >AI正在逐份识别合同文件，识别完成后将在对应文件行更新结果。</span
                 >
+              </div>
+              <div v-if="contractDraft.contractMode === 'upload' || contractDraft.contractMode === 'generated'" class="contract-file-table-toolbar">
+                <el-upload action="#" :auto-upload="false" :show-file-list="false" :limit="10" :on-change="handleContractFileUpload"><el-button type="primary" plain :icon="Upload">上传附件</el-button></el-upload>
+                <span>最多上传10个，单个文件不超过100MB；上传后逐份进行AI识别</span>
               </div>
               <el-table
                 :data="workingContractFiles"
@@ -3648,9 +3466,10 @@
                 >
               </el-table>
               <div v-if="contractDraft.contractMode !== 'framework'" class="contract-supporting-files">
-                <div class="supporting-file-heading"><div><strong>附件证明</strong><span>报价单、授权证明及其他合同补充材料，不作为合同正文参与AI识别</span></div><el-upload action="#" :auto-upload="false" :show-file-list="false" :on-change="handleContractOtherAttachmentUpload"><el-button :icon="Upload">上传附件证明</el-button></el-upload></div>
+                <div class="supporting-file-heading"><strong>其他附件</strong></div>
+                <div class="supporting-file-upload-row"><el-upload action="#" :auto-upload="false" :show-file-list="false" :limit="10" :on-change="handleContractOtherAttachmentUpload"><el-button type="primary" plain :icon="Upload">上传其他附件</el-button></el-upload><span>上限10个，单个最大100MB</span></div>
                 <div v-if="contractOtherFiles.length" class="supporting-file-list"><div v-for="file in contractOtherFiles" :key="file.uid || file.name" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.size }}</small><el-button link type="primary" @click="previewContractFile(file)">预览</el-button><el-button link type="danger" @click="removeContractOtherFile(file)">删除</el-button></div></div>
-                <div v-else class="supporting-file-empty">暂未上传附件证明</div>
+                <div v-else class="supporting-file-empty">暂未上传其他附件</div>
               </div>
             </section>
             </section>
@@ -3667,7 +3486,7 @@
                   name="purchaseOrder"
                   ><div class="task-tab-toolbar">
                     <span
-                      >合同审核通过后按任务逐条创建采购订单，订单号在执行成功后回填</span
+                      >合同审批通过后自动执行创单任务</span
                     ><el-button type="primary" :icon="Plus"
                       >新增采购订单任务</el-button
                     >
@@ -3777,9 +3596,9 @@
           </div>
           <div class="bottom-actions">
             <el-button @click="requestClose(activeTab)">取消</el-button
-            ><el-button @click="savePendingContract">保存为草稿</el-button
+            ><el-button @click="savePendingContract">保存草稿</el-button
             ><el-button type="primary" @click="submitContract"
-              >保存并提交</el-button
+              >提交审批</el-button
             >
           </div>
         </div>
@@ -4049,15 +3868,14 @@
               </div>
               <el-collapse v-model="orderDetailBudgetPanels" class="budget-detail-accordion">
                 <el-collapse-item name="budget-full" class="budget-disclosure-item">
-                  <template #title><div class="budget-disclosure-title"><span>{{ orderDetailBudgetPanels.includes('budget-full') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span><small>基础信息、预算计划、收益测算、附件与说明</small></div></template>
+                  <template #title><div class="budget-disclosure-title"><span>{{ orderDetailBudgetPanels.includes('budget-full') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span><small>基础信息、预算计划（含附件）、收益测算</small></div></template>
                   <h4 class="embedded-budget-group-title">基础信息</h4>
-                  <div class="embedded-budget-basic-grid"><div><span>业务类型</span><strong>{{ orderBusinessTypeDisplay }}</strong></div><div><span>发起方</span><strong>预算单</strong></div><div><span>预算有效期</span><strong>60 天</strong></div><div><span>市场环境说明</span><strong>价格稳定</strong></div></div>
+                  <div class="embedded-budget-basic-grid"><div><span>业务类型</span><strong>{{ orderBusinessTypeDisplay }}</strong></div><div><span>发起方</span><strong>预算单</strong></div><div><span>预算有效期</span><strong>60 天</strong></div></div>
                   <h4 class="embedded-budget-group-title">预算计划</h4>
-                  <div class="embedded-budget-basic-grid"><div><span>采购账期</span><strong>30 天</strong></div><div><span>预计付款日期</span><strong>2026-09-20</strong></div><div><span>最长销售周期</span><strong>45 天</strong></div><div><span>预计项目单毛利回补总额</span><strong>¥0.00</strong></div><div><span>利润说明</span><strong>价格及毛利测算依据预算单</strong></div></div>
+                  <div class="embedded-budget-basic-grid"><div><span>采购账期</span><strong>30 天</strong></div><div><span>预计付款日期</span><strong>2026-09-20</strong></div><div><span>最长销售周期</span><strong>45 天</strong></div><div><span>市场环境说明</span><strong>价格稳定</strong></div><div><span>预计项目单毛利回补总额</span><strong>¥0.00</strong></div><div><span>利润说明</span><strong>价格及毛利测算依据预算单</strong></div></div>
+                  <div class="embedded-budget-attachments"><h5>附件（{{ budgetAttachmentExamples.length }}）</h5><div class="budget-file-list"><div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row"><Document /><div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div></div>
                   <h4 class="embedded-budget-group-title">收益测算</h4>
                   <div class="linked-budget-summary embedded"><div><span>预计销售收入</span><strong>¥356,000.00</strong></div><div><span>预计采购成本</span><strong>¥299,000.00</strong></div><div><span>预计毛利</span><strong>¥61,900.00</strong></div><div><span>预计毛利率</span><strong>17.39%</strong></div></div>
-                  <h4 class="embedded-budget-group-title">附件与说明</h4>
-                  <div class="embedded-budget-note">预算附件 {{ budgetAttachmentExamples.length }} 项 · 补充说明 1 条</div>
                 </el-collapse-item>
               </el-collapse>
             </div>
@@ -4066,8 +3884,8 @@
             <SectionTitle
               number="03"
               :title="orderDraft.type === 'purchase' ? '采购明细' : '销售明细'"
-              ><template v-if="!orderPageReadonly && !orderUsesExistingContract"><el-button type="primary" :icon="Plus">添加商品</el-button
-              ><el-button>导入商品</el-button></template></SectionTitle
+              ><template v-if="!orderPageReadonly && !orderUsesExistingContract"><el-button type="primary" :icon="Plus" @click="openProductDialog">添加商品</el-button
+              ><el-button :icon="Upload">导入商品</el-button></template></SectionTitle
             ><GoodsDetailTabs ref="orderGoodsTabs" :main-label="orderDraft.type === 'purchase' ? '采购明细' : '销售明细'">
             <el-table :data="goods" border>
               <el-table-column type="index" label="序号" width="55" fixed="left" />
@@ -4257,7 +4075,7 @@
             <el-button @click="requestClose(activeTab)">取消</el-button
             ><el-button @click="saveOrderDraft">保存草稿</el-button
             ><el-button type="primary" @click="submitOrder"
-              >保存并提交</el-button
+              >提交审批</el-button
             >
           </div>
           <footer
@@ -4568,7 +4386,7 @@ const contractDetailGoodsTabs = ref(null);
 const contractCreateGoodsTabs = ref(null);
 const orderGoodsTabs = ref(null);
 const contractDetailBudgetPanels = ref([]);
-const contractCreateBudgetPanels = ref(["budget-attachments"]);
+const contractCreateBudgetPanels = ref([]);
 const orderDetailBudgetPanels = ref([]);
 
 const budgets = ref([
@@ -5528,8 +5346,6 @@ const listColumns = [
   { prop: "marketAnalysis", label: "市场环境说明", width: 150 },
   { prop: "remark", label: "其他说明", width: 130 },
   { prop: "profitDesc", label: "利润说明", width: 130 },
-  { prop: "modified", label: "预算是否有修改", width: 140 },
-  { prop: "modifyRecord", label: "预算修改记录", width: 140 },
 ];
 const businessTypeConfigs = {
   产品导向分销: {
@@ -5801,10 +5617,20 @@ const contractGoodsAlerts = computed(() => {
 });
 const budgetReminders = computed(() => {
   const items = [];
+  const customer = form.dynamic?.customer;
+  const riskEntity = customer || form.supplier;
+  if (riskEntity) {
+    items.push({
+      text: `${customer ? "客户" : "供应商"}存在风险`,
+      riskValue: "黑名单",
+      target: "basic",
+    });
+  }
   if (isEditing.value) {
     if (!form.supplier) items.push({ text: "请选择供应商", target: "basic" });
     if (!goods.value.length) items.push({ text: "请添加商品明细", target: "goods" });
-  } else if (slowSkuCount.value) {
+  }
+  if (slowSkuCount.value) {
     items.push({
       text: mode.value === "audit" ? "请重点复核 " : "当前预算包含 ",
       riskValue: `${slowSkuCount.value}种低流速商品`,
@@ -6391,23 +6217,17 @@ const budgetModules = computed(() => [
   ...(!isEditing.value
     ? [{ id: "related", order: "04", label: "关联单据", kind: "辅助" }]
     : []),
-  {
-    id: "attachments",
-    order: isEditing.value ? "04" : "05",
-    label: "附件与说明",
-    kind: "辅助",
-  },
   ...(mode.value === "detail"
     ? [
         {
           id: "approval-progress",
-          order: "06",
+          order: "05",
           label: "审批进度",
           kind: "辅助",
         },
         {
           id: "approval-comments",
-          order: "07",
+          order: "06",
           label: "审批评论",
           kind: "辅助",
         },
@@ -6417,13 +6237,13 @@ const budgetModules = computed(() => [
     ? [
         {
           id: "approval-progress",
-          order: "06",
+          order: "04",
           label: "审批进度",
           kind: "辅助",
         },
         {
           id: "approval-comments",
-          order: "07",
+          order: "05",
           label: "审批评论",
           kind: "辅助",
         },
@@ -7619,12 +7439,12 @@ function handleContractOtherAttachmentUpload(file) {
     name: file.name,
     size: file.size ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : "-",
   });
-  ElMessage.success("附件证明已上传");
+  ElMessage.success("其他附件已上传");
 }
 function removeContractOtherFile(file) {
   const index = contractOtherFiles.value.indexOf(file);
   if (index >= 0) contractOtherFiles.value.splice(index, 1);
-  ElMessage.success("附件证明已删除");
+  ElMessage.success("其他附件已删除");
 }
 function handleOrderProofUpload(file) {
   orderProofFiles.value.push({
@@ -8192,6 +8012,108 @@ onMounted(() => {
 }
 .budget-create-page #plan .plan-form :deep(.el-form-item__content) {
   min-width: 0;
+}
+.budget-create-page #plan .plan-form > h3,
+.budget-readonly-page #plan .plan-form > h3,
+.budget-create-page #plan .metrics > h3,
+.budget-readonly-page #plan .metrics > h3 {
+  margin-top: 2px;
+}
+
+/* 预算计划与收益测算的分隔线始终贯穿左右区域完整高度。 */
+:is(.budget-create-page, .budget-readonly-page) #plan .split-panel,
+.contract-edit-page .contract-budget-plan,
+.contract-detail-page .contract-budget-plan,
+.order-edit-page .contract-budget-plan,
+.order-detail-page .contract-budget-plan,
+.order-audit-page .contract-budget-plan {
+  align-items: stretch;
+}
+:is(.budget-create-page, .budget-readonly-page) #plan .metrics,
+.contract-edit-page .contract-budget-plan > .metrics,
+.contract-detail-page .contract-budget-plan > .metrics,
+.order-edit-page .contract-budget-plan > .metrics,
+.order-detail-page .contract-budget-plan > .metrics,
+.order-audit-page .contract-budget-plan > .metrics {
+  box-sizing: border-box;
+  align-self: stretch;
+}
+.budget-plan-attachment {
+  margin-top: 0;
+  padding-top: 2px;
+}
+.budget-plan-attachment-label {
+  margin-bottom: 7px;
+  color: #667685;
+  font-size: 12px;
+  line-height: 20px;
+}
+.budget-plan-attachment :deep(.el-upload) {
+  width: 100%;
+}
+.budget-plan-attachment :deep(.el-upload-dragger) {
+  width: 100%;
+  height: 64px;
+  min-height: 64px;
+  padding: 9px 16px 8px;
+  border-color: #d9dfe8;
+  border-radius: 4px;
+  background: #fff;
+}
+.budget-plan-attachment .upload-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 20px;
+  color: #1687f8;
+  svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+}
+.budget-plan-attachment .upload-help {
+  margin-top: 3px;
+  color: #8a97a5;
+  font-size: 11px;
+}
+.budget-plan-attachment .budget-file-list {
+  margin-top: 8px;
+}
+.budget-plan-attachment-more {
+  margin-top: 4px;
+  svg {
+    width: 13px;
+    margin-left: 4px;
+    transition: transform 0.2s ease;
+    &.rotated { transform: rotate(180deg); }
+  }
+}
+.entity-select-with-risk {
+  position: relative;
+  width: 100%;
+  &.has-risk :deep(.el-select__wrapper) {
+    padding-left: 31px;
+    border-color: #f2b8b5;
+  }
+}
+.entity-risk-icon {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 10px;
+  width: 15px;
+  height: 15px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: #e83b3b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  cursor: help;
 }
 .budget-create-page {
   min-width: 0;
@@ -9385,6 +9307,18 @@ onMounted(() => {
   .el-select {
     width: 100%;
   }
+}
+.reuse-original-dialog-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 4px;
+  background: #f5f8fb;
+  color: #667685;
+  font-size: 13px;
+  svg { width: 16px; color: #1687f8; }
 }
 .product-selection-summary {
   display: flex;
@@ -11197,16 +11131,59 @@ onMounted(() => {
   }
 }
 .contract-info-generate-action {
-  min-height: 44px;
-  margin-top: 4px;
-  padding: 6px 10px;
-  border-style: solid;
-  background: #fbfdff;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  display: block;
   :deep(.el-button) {
-    min-width: 112px;
-    color: #1684e8;
-    border-color: #89bff2;
-    background: #fff;
+    min-width: 96px;
+    min-height: 32px;
+  }
+}
+.contract-generate-field-label {
+  margin-bottom: 7px;
+  color: #667685;
+  font-size: 12px;
+  line-height: 20px;
+}
+.contract-info-generate-action .contract-generate-field-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 32px;
+  span {
+    color: #8a97a5;
+    font-size: 12px;
+  }
+}
+.contract-file-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  .contract-content-subtitle {
+    width: auto;
+    margin: 0;
+  }
+}
+.contract-file-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  margin: 4px 0 10px;
+  span {
+    color: #8a97a5;
+    font-size: 12px;
   }
 }
 .contract-switch-pair {
@@ -11219,10 +11196,17 @@ onMounted(() => {
 .goods-name-with-warning { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
 .low-flow-warning-icon { flex: none; color: #d48806; font-size: 14px; line-height: 1; }
 .contract-supporting-files { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8edf3; }
-.supporting-file-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.supporting-file-heading > div { min-width: 0; }
-.supporting-file-heading strong { display: block; margin-bottom: 3px; color: #44515f; font-size: 13px; }
+.supporting-file-heading { display: flex; align-items: center; min-height: 24px; }
+.supporting-file-heading strong { display: block; margin: 0; color: #44515f; font-size: 13px; }
 .supporting-file-heading span { color: #8a97a5; font-size: 12px; }
+.supporting-file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  margin-top: 6px;
+  span { color: #8a97a5; font-size: 12px; }
+}
 .supporting-file-list { margin-top: 8px; border: 1px solid #e5ebf2; border-radius: 5px; }
 .supporting-file-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 90px auto auto; align-items: center; gap: 8px; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid #edf1f5; }
 .supporting-file-row:last-child { border-bottom: 0; }
@@ -11325,6 +11309,11 @@ onMounted(() => {
       }
     }
   }
+}
+.contract-block h3 .module-title-action {
+  margin-left: auto;
+  flex: none;
+  font-weight: 400;
 }
 .contract-budget-plan > div:first-child > .contract-subtitle {
   font-size: 0;
@@ -12879,6 +12868,12 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 400;
 }
+.budget-create-page #plan .plan-form > h3,
+.budget-readonly-page #plan .plan-form > h3,
+.budget-create-page #plan .metrics > h3,
+.budget-readonly-page #plan .metrics > h3 {
+  margin-top: 2px;
+}
 .contract-readonly-section > .contract-content-subtitle {
   min-height: 30px;
   padding-right: 0;
@@ -14297,6 +14292,17 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px 20px;
+}
+.embedded-budget-attachments {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #edf1f5;
+}
+.embedded-budget-attachments h5 {
+  margin: 0 0 10px;
+  color: #667789;
+  font-size: 12px;
+  font-weight: 600;
 }
 .linked-budget-summary.embedded {
   grid-template-columns: repeat(4, minmax(0, 1fr));
