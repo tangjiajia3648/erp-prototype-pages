@@ -242,7 +242,7 @@
             label="关联预算单"
             min-width="165"
             ><template #default="{ row }"
-              ><el-link v-if="row.budgetCode !== '-'" type="primary">{{
+              ><el-link v-if="row.budgetCode !== '-'" type="primary" :underline="false" @click="openBudgetByCode(row.budgetCode)">{{
                 row.budgetCode
               }}</el-link
               ><span v-else>-</span></template
@@ -380,11 +380,8 @@
                 >{{ row.status }}</el-tag
               ></template
             ></el-table-column
-          ><el-table-column
-            prop="budgetCode"
-            label="关联预算单"
-            min-width="165"
-          /><el-table-column
+          ><el-table-column prop="budgetCode" label="关联预算单" min-width="165"
+            ><template #default="{ row }"><el-link v-if="row.budgetCode && row.budgetCode !== '-'" type="primary" :underline="false" @click="openBudgetByCode(row.budgetCode)">{{ row.budgetCode }}</el-link><span v-else>—</span></template></el-table-column><el-table-column
             prop="businessType"
             label="业务类型"
             width="125"
@@ -663,11 +660,8 @@
             label="供应商/客户"
             min-width="190"
             show-overflow-tooltip
-          /><el-table-column
-            prop="budgetCode"
-            label="关联预算单"
-            min-width="170"
-          /><el-table-column
+          /><el-table-column prop="budgetCode" label="关联预算单" min-width="170"
+            ><template #default="{ row }"><el-link v-if="row.budgetCode && row.budgetCode !== '-'" type="primary" :underline="false" @click="openBudgetByCode(row.budgetCode)">{{ row.budgetCode }}</el-link><span v-else>—</span></template></el-table-column><el-table-column
             prop="orderCode"
             label="关联订单"
             min-width="170"
@@ -1012,16 +1006,16 @@
           </article>
           <article class="section-card contract-readonly-section">
             <SectionTitle number="02" title="关联单据信息" />
+            <template v-if="activeContractPage.data.type !== 'purchase'">
             <h4 class="contract-content-subtitle">基础信息</h4>
             <el-form label-position="top" disabled
               ><el-row :gutter="16"
                 ><el-col :span="8"
                   ><el-form-item label="预算单编号"
                     ><div class="readonly-link-field">
-                      <el-link type="primary">{{
+                      <el-link type="primary" :underline="false" @click="openBudgetByCode(activeContractPage.data.budgetCode)">{{
                         activeContractPage.data.budgetCode
-                      }}</el-link
-                      ><span>↗</span>
+                      }}</el-link>
                     </div></el-form-item
                   ></el-col
                 ><el-col :span="8"
@@ -1051,10 +1045,31 @@
                     </div></el-form-item
                   ></el-col
                 ></el-row
-              ></el-form
-            ><el-collapse :model-value="['budget-attachments']" class="secondary-contract-info detail-budget-collapse"
-              ><el-collapse-item title="预算详情"
-                ><div class="split-panel contract-budget-plan">
+              ></el-form>
+            </template>
+            <div v-if="activeContractPage.data.type === 'purchase' && !contractDetailBudgetPanels.includes('budget-full')" class="linked-budget-summary contract-budget-title-summary">
+              <div><span>关联预算单</span><el-link type="primary" :underline="false" @click="openBudgetByCode(activeContractPage.data.budgetCode)">{{ activeContractPage.data.budgetCode }}</el-link></div>
+              <div><span>预计销售收入</span><strong>¥356,000.00</strong></div>
+              <div><span>预计采购成本</span><strong>¥299,000.00</strong></div>
+              <div><span>预计毛利</span><strong>¥61,900.00</strong></div>
+              <div><span>预计毛利率</span><strong>17.39%</strong></div>
+            </div>
+            <div v-if="activeContractPage.data.type !== 'purchase'" class="linked-budget-key-summary">
+              <div><span>预计销售收入</span><strong>¥356,000.00</strong></div>
+              <div><span>预计采购成本</span><strong>¥299,000.00</strong></div>
+              <div><span>预计毛利</span><strong>¥61,900.00</strong></div>
+              <div><span>预计毛利率</span><strong>17.39%</strong></div>
+            </div><el-collapse v-model="contractDetailBudgetPanels" class="secondary-contract-info detail-budget-collapse budget-detail-accordion"
+              ><el-collapse-item name="budget-full" class="budget-disclosure-item"
+                ><template #title><div class="budget-disclosure-title"><span>{{ contractDetailBudgetPanels.includes('budget-full') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span><small>基础信息、预算计划、收益测算、附件与说明</small></div></template
+                ><h4 class="embedded-budget-group-title">基础信息</h4>
+                <div class="embedded-budget-basic-grid">
+                  <div><span>预算单编号</span><el-link type="primary" :underline="false" @click="openBudgetByCode(activeContractPage.data.budgetCode)">{{ activeContractPage.data.budgetCode }}</el-link></div>
+                  <div><span>发起方</span><strong>预算单</strong></div>
+                  <div><span>预算有效期</span><strong>60 天</strong></div>
+                  <div><span>市场环境说明</span><strong>价格稳定</strong></div>
+                  <div><span>预计库存周期</span><strong>45 天</strong></div>
+                </div><div class="split-panel contract-budget-plan">
                   <div>
                     <h4 class="contract-subtitle">预算计划</h4>
                     <el-form label-position="top" disabled
@@ -1101,9 +1116,7 @@
                       </div>
                     </div>
                   </div>
-                </div></el-collapse-item
-              ><el-collapse-item name="budget-attachments" title="预算附件与说明"
-                ><div class="source-budget-attachments source-budget-separated">
+                </div><h4 class="embedded-budget-group-title">附件与说明</h4><div class="source-budget-attachments source-budget-separated">
                     <div class="source-budget-files">
                       <h4>附件（{{ budgetAttachmentExamples.length }}）</h4>
                       <div class="budget-file-list">
@@ -1754,22 +1767,22 @@
           </section>
           <div v-show="!contractWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
             <div>
-              <b>状态提醒</b
+              <b>风险与提醒</b
               ><span>{{
                 activeContractPage.data.type === "sale"
                   ? activeContractPage.data.status === "审批中" ? "4项" : "3项"
-                  : activeContractPage.data.status === "审批中" ? "2项" : "1项"
+                  : activeContractPage.data.status === "审批中" ? "4项" : "3项"
               }}</span>
             </div>
-            <button v-if="activeContractPage.data.status === '审批中'">
-              AI识别结果及印章配置待核对</button
-            ><button v-if="activeContractPage.data.type === 'purchase'">
-              采购订单任务执行状态待关注
-            </button><template v-else>
-              <button @click="ElMessage.info('查看客户超期应收明细')">客户存在超期应收 ¥249,836.00</button>
-              <button @click="ElMessage.info('查看客户额度占用明细')">当前可用额度为负 ¥524,692.00</button>
-              <button @click="ElMessage.info('查看客户超期明细')">当前最长超期 34 天</button>
-            </template>
+            <template v-if="activeContractPage.data.type === 'purchase'">
+              <button class="risk-item risk-critical" @click="openSupplierDetail(activeContractPage.data.enterprise, 'supplier')"><span>供应商状态</span><strong class="risk-status-tag">黑名单</strong></button>
+              <button class="risk-item risk-critical" @click="ElMessage.info('查看供应商已付款超期未入库明细')"><span>已付款超期未入库金额</span><strong class="risk-value">¥120,000.00</strong></button>
+              <button>采购订单任务执行状态待关注</button>
+            </template><template v-else>
+              <button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期应收明细')"><span>客户存在超期应收</span><strong class="risk-value">¥249,836.00</strong></button>
+              <button class="risk-item risk-critical" @click="ElMessage.info('查看客户额度占用明细')"><span>当前可用额度为负</span><strong class="risk-value">¥524,692.00</strong></button>
+              <button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期明细')"><span>当前最长超期</span><strong class="risk-value">34 天</strong></button>
+            </template><button v-if="activeContractPage.data.status === '审批中'">AI识别结果及印章配置待核对</button>
           </div>
         </aside>
       </section>
@@ -2595,8 +2608,8 @@
                 </button>
               </section>
               <section v-if="budgetReminders.length" class="flow-status-reminders">
-                <div><strong>状态提醒</strong><span>{{ budgetReminders.length }}项</span></div>
-                <button v-for="item in budgetReminders" :key="item.text" @click="jumpFromFlowControl(item.target)">{{ item.text }}</button>
+                <div><strong>风险与提醒</strong><span>{{ budgetReminders.length }}项</span></div>
+                <button v-for="item in budgetReminders" :key="item.text" @click="jumpFromFlowControl(item.target)">{{ item.text }}<strong v-if="item.riskValue" class="risk-value">{{ item.riskValue }}</strong>{{ item.suffix || '' }}</button>
               </section>
             </template>
           </aside>
@@ -2813,11 +2826,8 @@
     ></el-dialog>
     <el-dialog v-model="pendingContractVisible" title="待提交合同" width="900px"
       ><el-table :data="pendingContracts" border
-        ><el-table-column
-          prop="budgetCode"
-          label="来源预算单"
-          width="180"
-        /><el-table-column
+        ><el-table-column prop="budgetCode" label="来源预算单" width="180"
+          ><template #default="{ row }"><el-link type="primary" :underline="false" @click="openBudgetByCode(row.budgetCode)">{{ row.budgetCode }}</el-link></template></el-table-column><el-table-column
           prop="contractType"
           label="合同类型"
           width="120"
@@ -2956,13 +2966,13 @@
                 ><el-row :gutter="20"
                   ><el-col :span="8"
                     ><el-form-item label="预算单编号"
-                      ><div class="readonly-link-field">
-                        <el-link
-                          type="primary"
-                          @click="openBudgetFromContract"
-                          >{{ contractDraft.budget?.code }}</el-link
-                        ><span>↗</span>
-                      </div></el-form-item
+                      ><el-link
+                        type="primary"
+                        :underline="false"
+                        class="contract-document-link"
+                        @click="openBudgetFromContract"
+                        >{{ contractDraft.budget?.code }}</el-link
+                      ></el-form-item
                     ></el-col
                   ><el-col :span="8"
                     ><el-form-item label="预算有效期（天）"
@@ -2985,12 +2995,12 @@
             <section
               class="contract-block budget-reference-block related-budget-details"
             >
-              <el-collapse :model-value="['budget-attachments']">
-                <el-collapse-item name="budget-plan">
+              <el-collapse v-model="contractCreateBudgetPanels" class="budget-detail-accordion">
+                <el-collapse-item name="budget-plan" class="budget-disclosure-item">
                   <template #title
-                    ><div class="related-budget-collapse-title">
-                      <strong>预算详情</strong
-                      ><span>采购账期、付款日期、毛利及利润说明</span>
+                    ><div class="budget-disclosure-title">
+                      <span>{{ contractCreateBudgetPanels.includes('budget-plan') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span
+                      ><small>采购账期、付款日期、毛利及利润说明</small>
                     </div></template
                   >
                   <div class="split-panel contract-budget-plan">
@@ -3802,7 +3812,7 @@
             </button>
           </section>
           <div v-show="!contractWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
-            <div><b>状态提醒</b><span>2项</span></div>
+            <div><b>风险与提醒</b><span>2项</span></div>
             <button>合同文件待上传或识别</button><button>印章尚未配置</button>
           </div>
         </aside>
@@ -4018,9 +4028,9 @@
             <SectionTitle number="02" title="关联单据" /><div class="subsection-heading">来源单据</div><el-form
               label-position="top"
               ><el-row :gutter="16" class="order-field-grid"
-                ><el-col v-if="showOrderBudget" :span="6"
+                ><el-col v-if="showOrderBudget && !(orderPageReadonly && orderDraft.budgetCode)" :span="6"
                   ><el-form-item label="关联预算单" :required="orderDraft.creationMethod === 'budget_later'"
-                    ><el-link v-if="(orderPageReadonly || orderDraft.entrySource === 'budget' || orderDraft.entrySource === 'contract') && orderDraft.budgetCode" :underline="false" class="order-readonly-value document-field-link" @click="openOrderBudgetDetail">{{ orderDraft.budgetCode }}</el-link><div v-else class="linked-document-control"><el-select v-model="orderDraft.budgetCode" filterable clearable placeholder="请选择预算单编号"><el-option v-for="item in budgets" :key="item.code" :label="item.code" :value="item.code" /></el-select><el-button v-if="orderDraft.budgetCode" link type="primary" @click="openOrderBudgetDetail">查看</el-button></div></el-form-item></el-col
+                    ><el-link v-if="(orderPageReadonly || orderDraft.entrySource === 'budget' || orderDraft.entrySource === 'contract') && orderDraft.budgetCode" :underline="false" class="order-readonly-value link-value document-field-link" @click="openOrderBudgetDetail">{{ orderDraft.budgetCode }}</el-link><div v-else class="linked-document-control"><el-select v-model="orderDraft.budgetCode" filterable clearable placeholder="请选择预算单编号"><el-option v-for="item in budgets" :key="item.code" :label="item.code" :value="item.code" /></el-select><el-button v-if="orderDraft.budgetCode" link type="primary" @click="openOrderBudgetDetail">查看</el-button></div></el-form-item></el-col
                 ><el-col v-if="showOrderContract" :span="6"><el-form-item label="关联合同" required
                     ><el-link v-if="(orderPageReadonly || orderDraft.entrySource !== 'list') && orderDraft.contractCode" :underline="false" class="order-readonly-value document-field-link" @click="openOrderContractDetail">{{ orderDraft.contractCode }}</el-link><el-input v-else v-model="orderDraft.contractCode" placeholder="请输入或选择已生效合同" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.contractCode" type="primary" @click="openOrderContractDetail">查看</el-link></template></el-input></el-form-item></el-col
                 ><el-col v-if="showProjectFollowup" :span="6"><el-form-item label="是否属于项目后运行单"><el-switch v-model="orderDraft.projectFollowup" :disabled="orderPageReadonly" /></el-form-item></el-col
@@ -4028,6 +4038,29 @@
                 ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="供应商订单号"><div class="supplier-order-code-summary"><span>{{ orderDraft.supplierOrderCodes[0] || '暂未录入' }}</span><small v-if="orderDraft.supplierOrderCodes.length > 1">共{{ orderDraft.supplierOrderCodes.length }}条</small><el-button link type="primary" @click="openSupplierOrderCodes">{{ orderPageReadonly ? '查看全部' : '修改' }}</el-button></div></el-form-item></el-col
               ></el-row
             ></el-form>
+            <div v-if="orderPageReadonly && orderDraft.budgetCode" class="linked-budget-section">
+              <div class="subsection-heading">关联预算单</div>
+              <div class="linked-budget-summary">
+                <div><span>预算单编号</span><el-link type="primary" :underline="false" @click="openOrderBudgetDetail">{{ orderDraft.budgetCode }}</el-link></div>
+                <div><span>预计销售收入</span><strong>¥356,000.00</strong></div>
+                <div><span>预计采购成本</span><strong>¥299,000.00</strong></div>
+                <div><span>预计毛利</span><strong>¥61,900.00</strong></div>
+                <div><span>预计毛利率</span><strong>17.39%</strong></div>
+              </div>
+              <el-collapse v-model="orderDetailBudgetPanels" class="budget-detail-accordion">
+                <el-collapse-item name="budget-full" class="budget-disclosure-item">
+                  <template #title><div class="budget-disclosure-title"><span>{{ orderDetailBudgetPanels.includes('budget-full') ? '收起完整预算单信息' : '展开完整预算单信息' }}</span><small>基础信息、预算计划、收益测算、附件与说明</small></div></template>
+                  <h4 class="embedded-budget-group-title">基础信息</h4>
+                  <div class="embedded-budget-basic-grid"><div><span>业务类型</span><strong>{{ orderBusinessTypeDisplay }}</strong></div><div><span>发起方</span><strong>预算单</strong></div><div><span>预算有效期</span><strong>60 天</strong></div><div><span>市场环境说明</span><strong>价格稳定</strong></div></div>
+                  <h4 class="embedded-budget-group-title">预算计划</h4>
+                  <div class="embedded-budget-basic-grid"><div><span>采购账期</span><strong>30 天</strong></div><div><span>预计付款日期</span><strong>2026-09-20</strong></div><div><span>最长销售周期</span><strong>45 天</strong></div><div><span>预计项目单毛利回补总额</span><strong>¥0.00</strong></div><div><span>利润说明</span><strong>价格及毛利测算依据预算单</strong></div></div>
+                  <h4 class="embedded-budget-group-title">收益测算</h4>
+                  <div class="linked-budget-summary embedded"><div><span>预计销售收入</span><strong>¥356,000.00</strong></div><div><span>预计采购成本</span><strong>¥299,000.00</strong></div><div><span>预计毛利</span><strong>¥61,900.00</strong></div><div><span>预计毛利率</span><strong>17.39%</strong></div></div>
+                  <h4 class="embedded-budget-group-title">附件与说明</h4>
+                  <div class="embedded-budget-note">预算附件 {{ budgetAttachmentExamples.length }} 项 · 补充说明 1 条</div>
+                </el-collapse-item>
+              </el-collapse>
+            </div>
           </article>
           <article id="order-goods" class="section-card order-goods-section">
             <SectionTitle
@@ -4334,9 +4367,10 @@
             </button>
           </section>
           <div v-show="!orderWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
-            <div><b>状态提醒</b><span>{{ orderDraft.type === 'sale' ? '3项' : '2项' }}</span></div>
-            <template v-if="orderDraft.type === 'purchase'"><button>预计到货日期需确认</button><button>付款附件尚未上传</button></template
-            ><template v-else><button @click="ElMessage.info('查看客户超期应收明细')">客户存在超期应收 ¥249,836.00</button><button @click="ElMessage.info('查看客户额度占用明细')">当前可用额度为负 ¥524,692.00</button><button @click="ElMessage.info('查看客户超期明细')">当前最长超期 34 天</button></template>
+            <div><b>风险与提醒</b><span>{{ orderDraft.type === 'sale' ? '3项' : '2项' }}</span></div>
+            <template v-if="orderDraft.type === 'purchase' && !orderPageReadonly"><button @click="ElMessage.info('查看供应商已付款超期未入库明细')">供应商存在已付款超期未入库金额 <strong class="risk-value">¥120,000.00</strong></button><button @click="openSupplierDetail(orderDraft.partyName, 'supplier')">查看供应商风险与资质信息</button></template
+            ><template v-else-if="orderDraft.type === 'purchase'"><button>预计到货日期需确认</button><button>付款附件尚未上传</button></template
+            ><template v-else><button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期应收明细')"><span>客户存在超期应收</span><strong class="risk-value">¥249,836.00</strong></button><button class="risk-item risk-critical" @click="ElMessage.info('查看客户额度占用明细')"><span>当前可用额度为负</span><strong class="risk-value">¥524,692.00</strong></button><button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期明细')"><span>当前最长超期</span><strong class="risk-value">34 天</strong></button></template>
           </div>
         </aside>
       </section></Teleport
@@ -4497,9 +4531,30 @@ const RelatedTable = defineComponent({
         data: props.type === "销售订单" ? saleRows : props.type === "采购订单" ? purchaseRows : contractRows,
         border: true,
       }, () => (props.type === "销售订单" ? saleColumns : props.type === "采购订单" ? purchaseColumns : contractColumns)
-        .map(([prop, label, width, align]) => h(resolveComponent("el-table-column"), {
-          prop, label, minWidth: width, align, showOverflowTooltip: true,
-        })));
+        .map(([prop, label, width, align]) => {
+          const columnProps = { prop, label, minWidth: width, align, showOverflowTooltip: true };
+          if (prop === "code" && (props.type === "销售订单" || props.type === "采购订单")) {
+            return h(resolveComponent("el-table-column"), columnProps, {
+              default: ({ row }) => h(resolveComponent("el-link"), {
+                type: "primary",
+                underline: false,
+                onClick: () => openOrderDetail(row, props.type === "销售订单" ? "sale" : "purchase"),
+              }, () => row.code),
+            });
+          }
+          if (prop === "budgetCode") {
+            return h(resolveComponent("el-table-column"), columnProps, {
+              default: ({ row }) => row.budgetCode && row.budgetCode !== "-"
+                ? h(resolveComponent("el-link"), {
+                    type: "primary",
+                    underline: false,
+                    onClick: () => openBudgetByCode(row.budgetCode),
+                  }, () => row.budgetCode)
+                : h("span", "—"),
+            });
+          }
+          return h(resolveComponent("el-table-column"), columnProps);
+        }));
   },
 });
 import { resolveComponent } from "vue";
@@ -4512,6 +4567,9 @@ const budgetGoodsTabs = ref(null);
 const contractDetailGoodsTabs = ref(null);
 const contractCreateGoodsTabs = ref(null);
 const orderGoodsTabs = ref(null);
+const contractDetailBudgetPanels = ref([]);
+const contractCreateBudgetPanels = ref(["budget-attachments"]);
+const orderDetailBudgetPanels = ref([]);
 
 const budgets = ref([
   {
@@ -5747,7 +5805,12 @@ const budgetReminders = computed(() => {
     if (!form.supplier) items.push({ text: "请选择供应商", target: "basic" });
     if (!goods.value.length) items.push({ text: "请添加商品明细", target: "goods" });
   } else if (slowSkuCount.value) {
-    items.push({ text: mode.value === "audit" ? `请重点复核 ${slowSkuCount.value}种低流速商品的采购数量及销售计划` : `当前预算包含 ${slowSkuCount.value}种低流速商品`, target: "goods" });
+    items.push({
+      text: mode.value === "audit" ? "请重点复核 " : "当前预算包含 ",
+      riskValue: `${slowSkuCount.value}种低流速商品`,
+      suffix: mode.value === "audit" ? "的采购数量及销售计划" : "",
+      target: "goods",
+    });
   }
   return items;
 });
@@ -6627,7 +6690,16 @@ function openOrderDraft(row, type) {
   orderDraft.typeLabel = type === "purchase" ? "采购订单" : "销售订单";
   orderDraft.entrySource = "budget";
   orderDraft.businessType = normalizeOrderBusinessType(row.type);
-  orderDraft.creationMethod = type === "purchase" ? "contract" : "budget_later";
+  if (type === "purchase") {
+    orderDraft.creationMethod = "contract";
+  } else {
+    const availableMethods = saleCreationMethodRules[orderDraft.businessType] || [];
+    orderDraft.creationMethod = availableMethods.some(([value]) => value === "budget_later")
+      ? "budget_later"
+      : availableMethods.some(([value]) => value === "order_first")
+        ? "order_first"
+        : availableMethods[0]?.[0] || "contract";
+  }
   orderDraft.budgetCode = row.code;
   orderDraft.partyLabel = type === "purchase" ? "供应商" : "客户";
   orderDraft.partyName = row.supplier;
@@ -7004,19 +7076,21 @@ function activateTab(key) {
     Object.assign(documentData, tab.data);
   }
 }
-function openBudgetFromContract() {
-  if (contractDraft.budget) {
-    activeView.value = "list";
-    openDocument("detail", contractDraft.budget);
-  }
-}
-function openOrderBudgetDetail() {
-  const budget = budgets.value.find((item) => item.code === orderDraft.budgetCode);
+function openBudgetByCode(code) {
+  if (!code || code === "-" || code === "—") return;
+  const budget = budgets.value.find((item) => item.code === code);
   if (!budget) {
     ElMessage.warning("未找到对应预算单");
     return;
   }
+  activeView.value = "list";
   openDocument("detail", budget);
+}
+function openBudgetFromContract() {
+  openBudgetByCode(contractDraft.budget?.code);
+}
+function openOrderBudgetDetail() {
+  openBudgetByCode(orderDraft.budgetCode);
 }
 function openOrderContractDetail() {
   const contract = contractRows.value.find(
@@ -9909,13 +9983,21 @@ onMounted(() => {
   > button {
     width: 100%;
     min-height: 34px;
-    padding: 6px 4px;
+    padding: 9px 4px;
+    border: 0;
     border-bottom: 1px dashed #e8edf2;
     background: transparent;
     color: #697887;
     font-size: 11px;
     line-height: 1.45;
     text-align: left;
+    outline: none;
+    cursor: pointer;
+  }
+  > button:hover,
+  > button:focus,
+  > button:active {
+    background: #fafcff;
   }
   > button::before {
     display: inline-block;
@@ -9925,6 +10007,39 @@ onMounted(() => {
     border-radius: 50%;
     background: #e89a23;
     content: "";
+  }
+  .risk-value {
+    margin: 0 2px;
+    color: #d9363e;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  > button.risk-item {
+    min-height: 46px;
+    display: grid;
+    grid-template-columns: 6px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 8px;
+  }
+  > button.risk-item::before {
+    margin-right: 0;
+    background: #d9363e;
+  }
+  > button.risk-item > span {
+    min-width: 0;
+    color: #596b7d;
+    line-height: 18px;
+  }
+  .risk-status-tag {
+    padding: 1px 5px;
+    border: 1px solid #ffccc7;
+    border-radius: 8px;
+    background: #fff1f0;
+    color: #cf1322;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    white-space: nowrap;
   }
 }
 .flow-module-control {
@@ -10539,6 +10654,7 @@ onMounted(() => {
     flex-basis: 50%;
   }
 }
+
 @media (max-width: 1280px) {
   .flow-module-control:not(.collapsed) {
     width: 220px;
@@ -11951,7 +12067,7 @@ onMounted(() => {
 .order-edit-page .subsection-heading {
   box-sizing: border-box;
   min-height: 30px;
-  margin: 28px 0 12px;
+  margin: 18px 0 10px;
   padding: 4px 0 4px 10px;
   border: 0;
   border-left: 3px solid #9fc9f3;
@@ -11972,15 +12088,42 @@ onMounted(() => {
   display: none;
 }
 .order-field-grid > [class*="el-col-"] {
-  width: auto;
+  width: 100%;
   max-width: none !important;
   padding-right: 0 !important;
   padding-left: 0 !important;
   flex: none !important;
 }
+.order-edit-page:not(.order-detail-page):not(.order-audit-page)
+  .section-heading + .subsection-heading,
+.order-edit-page:not(.order-detail-page):not(.order-audit-page)
+  .section-heading + .el-form .subsection-heading:first-child {
+  margin-top: 8px;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page)
+  .order-field-grid > [class*="el-col-"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex-basis: auto !important;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page)
+  .order-field-grid :deep(.el-form-item),
+.order-edit-page:not(.order-detail-page):not(.order-audit-page)
+  .order-field-grid :deep(.el-form-item__content) {
+  width: 100%;
+}
 .order-field-grid :deep(.el-form-item__content) {
+  min-height: 32px;
   min-width: 0;
   align-items: center;
+}
+.order-field-grid :deep(.el-form-item__label) {
+  box-sizing: border-box;
+  min-height: 36px;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 6px;
+  line-height: 18px;
 }
 .order-field-grid :deep(.el-switch) {
   min-height: 32px;
@@ -12042,8 +12185,24 @@ onMounted(() => {
   line-height: 20px;
 }
 .order-readonly-value.link-value {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 0;
+  padding-bottom: 0;
   color: #1687f8;
   cursor: pointer;
+}
+.contract-document-link {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  color: #1687f8;
+  font-size: 13px;
+  line-height: 20px;
 }
 .order-readonly-value.no-contract-value {
   color: #657485;
@@ -13401,6 +13560,10 @@ onMounted(() => {
 .document-page.order-audit-page > .document-header {
   grid-column: 1 / -1;
   grid-row: 1;
+  justify-self: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
   min-height: 174px;
   padding-top: 18px;
   overflow: visible;
@@ -13813,16 +13976,47 @@ onMounted(() => {
 
 /* 新建销售订单：沿用新建预算/合同的白色标题区和等高字段网格。 */
 .order-edit-page:not(.order-detail-page):not(.order-audit-page) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
   background: #eef1f5;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page).workbench-collapsed {
+  grid-template-columns: minmax(0, 1fr) 40px;
 }
 .order-edit-page:not(.order-detail-page):not(.order-audit-page) > .document-header {
   position: relative;
   z-index: 1;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  width: auto;
+  min-width: 0;
+  min-height: 56px;
+  margin: 0;
+  padding: 9px 18px;
   background: #fff !important;
 }
 .order-edit-page:not(.order-detail-page):not(.order-audit-page) > .order-document-scroll {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  margin-right: 0;
   padding: 14px 16px 28px;
   background: #eef1f5;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page) > .order-side-directory {
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  inset: auto;
+  width: auto;
+  min-height: 0;
+  padding: 12px;
+  background: #eef1f5;
+}
+.order-edit-page:not(.order-detail-page):not(.order-audit-page).workbench-collapsed > .order-side-directory {
+  width: auto;
+  padding: 0;
 }
 .order-edit-page:not(.order-detail-page):not(.order-audit-page) .section-card {
   margin-bottom: 14px;
@@ -13890,6 +14084,274 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
     gap: 18px;
   }
+}
+
+/* 关联预算详情：紧凑摘要栏 + 卡片内展开，保留原预算字段结构。 */
+.contract-edit-page .related-budget-details {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.budget-detail-accordion :deep(.el-collapse-item) {
+  margin-bottom: 8px;
+  overflow: hidden;
+  border: 1px solid #dfe6ee;
+  border-radius: 6px;
+  background: #fff;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.budget-detail-accordion :deep(.el-collapse-item:hover) {
+  border-color: #b9d6f2;
+}
+.budget-detail-accordion :deep(.el-collapse-item.is-active) {
+  border-color: #a9cdef;
+  box-shadow: 0 2px 8px rgba(39, 82, 124, 0.06);
+}
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item__header),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item__header) {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: #f8fafc;
+  line-height: 44px;
+}
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item.is-active .el-collapse-item__header),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item.is-active .el-collapse-item__header) {
+  border-bottom: 1px solid #e7edf3;
+  background: #f3f8fd;
+}
+.budget-detail-accordion :deep(.el-collapse-item__arrow) {
+  margin-left: 12px;
+  color: #6f8193;
+  font-size: 14px;
+}
+.budget-detail-accordion .related-budget-collapse-title {
+  flex: 1;
+  justify-content: space-between;
+  gap: 18px;
+}
+.budget-detail-accordion .related-budget-collapse-title strong {
+  color: #33465a;
+  font-size: 13px;
+  font-weight: 650;
+}
+.budget-detail-accordion .related-budget-collapse-title span {
+  overflow: hidden;
+  color: #8492a2;
+  font-size: 12px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item__content),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item__content) {
+  padding: 14px 14px 10px;
+}
+
+/* 折叠标题沿用页面二级标题语言：白底、左侧短蓝线，不使用独立卡片色块。 */
+.budget-detail-accordion :deep(.el-collapse-item),
+.budget-detail-accordion :deep(.el-collapse-item:hover),
+.budget-detail-accordion :deep(.el-collapse-item.is-active) {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item__header),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item__header),
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item.is-active .el-collapse-item__header),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item.is-active .el-collapse-item__header) {
+  position: relative;
+  min-height: 40px;
+  padding: 0 10px 0 14px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  border-radius: 0;
+  background: transparent;
+  line-height: 40px;
+}
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item__header::before),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item__header::before) {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 0;
+  width: 3px;
+  background: #9fc9f3;
+  content: "";
+}
+.budget-detail-accordion .related-budget-collapse-title {
+  justify-content: flex-start;
+}
+.budget-detail-accordion .related-budget-collapse-title strong {
+  font-size: 13px;
+}
+.budget-detail-accordion .related-budget-collapse-title span {
+  margin-left: 4px;
+}
+.contract-edit-page .budget-detail-accordion :deep(.el-collapse-item__content),
+.contract-detail-page .budget-detail-accordion :deep(.el-collapse-item__content) {
+  padding: 12px 0 8px 14px;
+}
+.budget-detail-accordion .budget-disclosure-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.contract-edit-page .budget-detail-accordion :deep(.budget-disclosure-item > .el-collapse-item__header),
+.contract-detail-page .budget-detail-accordion :deep(.budget-disclosure-item > .el-collapse-item__header) {
+  padding-left: 0;
+}
+.budget-detail-accordion :deep(.budget-disclosure-item > .el-collapse-item__header::before) {
+  display: none;
+}
+.budget-detail-accordion .budget-disclosure-title > span {
+  flex: none;
+  color: #1677d2;
+  font-size: 13px;
+  font-weight: 500;
+}
+.budget-detail-accordion .budget-disclosure-title > small {
+  overflow: hidden;
+  color: #8a97a5;
+  font-size: 12px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.contract-edit-page .budget-detail-accordion .contract-budget-plan .contract-subtitle,
+.contract-detail-page .budget-detail-accordion .contract-budget-plan .contract-subtitle {
+  min-height: 24px;
+  margin: 0 0 10px;
+  padding: 0 0 6px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  color: #697887;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.budget-detail-accordion .contract-budget-plan > div:first-child > .contract-subtitle::after {
+  display: none;
+}
+.linked-budget-key-summary,
+.linked-budget-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin: 4px 0 10px;
+  padding: 10px 0;
+  border-top: 1px solid #edf1f5;
+  border-bottom: 1px solid #edf1f5;
+}
+.linked-budget-key-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.linked-budget-key-summary > div,
+.linked-budget-summary > div {
+  min-width: 0;
+  padding: 0 14px;
+  border-right: 1px solid #edf1f5;
+}
+.linked-budget-key-summary > div:first-child,
+.linked-budget-summary > div:first-child {
+  padding-left: 0;
+}
+.linked-budget-key-summary > div:last-child,
+.linked-budget-summary > div:last-child {
+  border-right: 0;
+}
+.linked-budget-key-summary span,
+.linked-budget-summary span,
+.embedded-budget-basic-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: #7b8b9d;
+  font-size: 12px;
+}
+.linked-budget-key-summary strong,
+.linked-budget-summary strong,
+.embedded-budget-basic-grid strong {
+  color: #2f3d4c;
+  font-size: 13px;
+  font-weight: 600;
+}
+.linked-budget-section > .subsection-heading {
+  margin-top: 14px;
+}
+.embedded-budget-group-title {
+  margin: 14px 0 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #edf1f5;
+  color: #667789;
+  font-size: 12px;
+  font-weight: 600;
+}
+.embedded-budget-group-title:first-of-type {
+  margin-top: 0;
+}
+.embedded-budget-basic-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 20px;
+}
+.linked-budget-summary.embedded {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 0;
+}
+.embedded-budget-note {
+  padding: 9px 12px;
+  border-radius: 4px;
+  background: #f7f9fb;
+  color: #68798a;
+  font-size: 12px;
+}
+@media (max-width: 1180px) {
+  .linked-budget-summary,
+  .linked-budget-key-summary,
+  .linked-budget-summary.embedded,
+  .embedded-budget-basic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 预算、合同、订单共用一级模块节奏：模块间距统一为 16px，避免历史样式叠加。 */
+:is(.budget-create-page, .budget-edit-page, .budget-readonly-page)
+  .document-scroll > .section-card,
+:is(.contract-detail-page, .order-edit-page, .order-detail-page, .order-audit-page)
+  > .document-scroll > .section-card {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.document-page.contract-edit-page .contract-prototype-content {
+  row-gap: 16px;
+}
+.document-page.contract-edit-page .contract-prototype-content > .contract-block {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.document-page.contract-edit-page .contract-related-group > .contract-block,
+.document-page.contract-edit-page .contract-main-group > .contract-block {
+  margin-bottom: 0;
+}
+
+/* 合同信息内部节奏：消除旧二级标题 28px 上边距造成的大段空白。 */
+.contract-edit-page .contract-info-block .contract-field-group-title,
+.contract-detail-page .contract-detail-info .contract-field-group-title,
+.order-edit-page .order-contract-form .contract-field-group-title {
+  min-height: 28px;
+  margin: 12px 0 8px;
+  padding: 3px 0 3px 10px;
+  background: transparent;
+  line-height: 22px;
+}
+.contract-edit-page .contract-info-block .el-row > .contract-field-group-title:first-child,
+.contract-detail-page .contract-detail-info .el-row > .contract-field-group-title:first-child,
+.order-edit-page .order-contract-form > .contract-field-group-title:first-child {
+  margin-top: 6px;
 }
 
 </style>
