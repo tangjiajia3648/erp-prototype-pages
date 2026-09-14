@@ -1631,6 +1631,8 @@
               <el-button
                 v-if="approvalDecision !== 'return'"
                 type="primary"
+                :loading="approvalSubmitting"
+                :disabled="approvalSubmitting"
                 @click="submitApprovalOperation"
                 >提交</el-button
               >
@@ -1669,7 +1671,7 @@
               </div>
               <div class="approval-return-actions">
                 <el-button @click="cancelApprovalReturn">取消</el-button>
-                <el-button type="primary" @click="submitApprovalOperation">提交</el-button>
+                <el-button type="primary" :loading="approvalSubmitting" :disabled="approvalSubmitting" @click="submitApprovalOperation">提交</el-button>
               </div>
             </div>
           </footer>
@@ -1701,13 +1703,12 @@
               ><span>{{
                 activeContractPage.data.type === "sale"
                   ? activeContractPage.data.status === "审批中" ? "3项风险 · 1项提醒" : "3项风险"
-                  : activeContractPage.data.status === "审批中" ? "2项风险 · 2项提醒" : "2项风险 · 1项提醒"
+                  : activeContractPage.data.status === "审批中" ? "2项风险 · 1项提醒" : "2项风险"
               }}</span>
             </div>
             <template v-if="activeContractPage.data.type === 'purchase'">
               <button class="risk-item risk-critical" @click="openSupplierDetail(activeContractPage.data.enterprise, 'supplier')"><span>供应商状态</span><strong class="risk-status-tag">黑名单</strong></button>
               <button class="risk-item risk-critical" @click="ElMessage.info('查看供应商已付款超期未入库明细')"><span>已付款超期未入库金额</span><strong class="risk-value">¥120,000.00</strong></button>
-              <button class="risk-item risk-normal"><span>采购订单任务执行状态待关注</span><strong class="reminder-status-tag">需关注</strong></button>
             </template><template v-else>
               <button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期应收明细')"><span>客户存在超期应收</span><strong class="risk-value">¥249,836.00</strong></button>
               <button class="risk-item risk-critical" @click="ElMessage.info('查看客户额度占用明细')"><span>当前可用额度为负</span><strong class="risk-value">¥524,692.00</strong></button>
@@ -1739,7 +1740,7 @@
             <p v-if="!isEditing" class="document-meta">
               <span>预算单编号：{{ documentData.code }}</span>
               <span>供应商：<el-link type="primary" @click="openSupplierDetail(form.supplier)">{{ form.supplier || '—' }}</el-link></span>
-              <span>采销责任人：{{ documentData.owner }}</span>
+              <span>采购责任人：{{ documentData.owner }}</span>
               <span>制单时间：{{ documentData.created || '—' }}</span>
             </p>
           </div>
@@ -2374,7 +2375,7 @@
               >
               <template v-if="mode === 'edit'">
                 <el-button type="primary" @click="openBudgetChangePreview"
-                  >保存并预览</el-button
+                  >保存并提交</el-button
                 >
               </template>
               <template v-else>
@@ -2414,6 +2415,8 @@
               <el-button
                 v-if="approvalDecision !== 'return'"
                 type="primary"
+                :loading="approvalSubmitting"
+                :disabled="approvalSubmitting"
                 @click="submitApprovalOperation"
                   >提交</el-button
                 >
@@ -2452,7 +2455,7 @@
               </div>
               <div class="approval-return-actions">
                 <el-button @click="cancelApprovalReturn">取消</el-button>
-                <el-button type="primary" @click="submitApprovalOperation">提交</el-button>
+                <el-button type="primary" :loading="approvalSubmitting" :disabled="approvalSubmitting" @click="submitApprovalOperation">提交</el-button>
               </div>
             </div>
             </footer>
@@ -2518,7 +2521,7 @@
                   <span>{{ item.text }}{{ item.suffix || '' }}</span>
                   <strong
                     v-if="item.riskValue"
-                    :class="item.riskValue === '黑名单' ? 'risk-status-tag' : item.level === 'risk' ? 'risk-value' : 'reminder-value'"
+                    :class="item.riskValue === '黑名单' ? 'risk-status-tag' : item.level === 'risk' ? 'risk-value' : item.tagValue ? 'reminder-status-tag' : 'reminder-value'"
                     >{{ item.riskValue }}</strong
                   >
                 </button>
@@ -3214,7 +3217,7 @@
                 <el-radio-group v-model="approvalDecision"><el-radio value="approve">通过</el-radio><el-radio value="reject">驳回</el-radio><el-radio value="return">退回</el-radio></el-radio-group>
                 <el-input v-if="approvalDecision !== 'return'" v-model="approvalOperationRemark" type="textarea" :autosize="{ minRows: 1, maxRows: 3 }" maxlength="500" show-word-limit :placeholder="approvalDecision === 'reject' ? '请输入驳回原因（必填）' : '填写审批意见（选填）'" />
                 <el-checkbox v-model="approvalFollowed">关注</el-checkbox>
-                <el-button v-if="approvalDecision !== 'return'" type="primary" @click="completeContractChangeApproval">提交</el-button>
+                <el-button v-if="approvalDecision !== 'return'" type="primary" :loading="approvalSubmitting" :disabled="approvalSubmitting" @click="completeContractChangeApproval">提交</el-button>
               </div>
               <div v-if="approvalDecision === 'return'" class="approval-return-panel">
                 <div class="approval-return-heading"><strong><i>*</i>退回节点</strong><span>被勾选人处理后，将按原流程继续审批</span></div>
@@ -3226,7 +3229,7 @@
                   <el-table-column prop="opinion" label="审批意见" min-width="220" />
                 </el-table>
                 <div class="approval-return-reason"><label><i>*</i>退回原因</label><el-input v-model="approvalOperationRemark" type="textarea" :rows="1" maxlength="500" show-word-limit placeholder="请输入退回原因" /></div>
-                <div class="approval-return-actions"><el-button @click="cancelApprovalReturn">取消</el-button><el-button type="primary" @click="completeContractChangeApproval">提交</el-button></div>
+                <div class="approval-return-actions"><el-button @click="cancelApprovalReturn">取消</el-button><el-button type="primary" :loading="approvalSubmitting" :disabled="approvalSubmitting" @click="completeContractChangeApproval">提交</el-button></div>
               </div>
             </footer>
           </div>
@@ -4173,11 +4176,10 @@
             </button>
           </section>
           <div v-show="!contractWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
-            <div><b>风险与提醒</b><span>2项风险 · 1项提醒</span></div>
+            <div><b>风险与提醒</b><span>{{ contractDraft.type === 'purchase' ? '2项风险' : '2项风险 · 1项提醒' }}</span></div>
             <template v-if="contractDraft.type === 'purchase'">
               <button class="risk-item risk-critical"><span>供应商状态</span><strong class="risk-status-tag">黑名单</strong></button>
               <button class="risk-item risk-critical risk-amount"><span>已付款超期未入库金额</span><strong class="risk-value">¥120,000.00</strong></button>
-              <button class="risk-item risk-normal"><span>采购订单任务执行状态待关注</span><strong class="reminder-status-tag">需关注</strong></button>
             </template>
             <template v-else>
               <button class="risk-item risk-critical"><span>客户状态</span><strong class="risk-status-tag">黑名单</strong></button>
@@ -4635,6 +4637,8 @@
               <el-button
                 v-if="approvalDecision !== 'return'"
                 type="primary"
+                :loading="approvalSubmitting"
+                :disabled="approvalSubmitting"
                 @click="submitApprovalOperation"
                 >提交</el-button
               >
@@ -4673,7 +4677,7 @@
               </div>
               <div class="approval-return-actions">
                 <el-button @click="cancelApprovalReturn">取消</el-button>
-                <el-button type="primary" @click="submitApprovalOperation">提交</el-button>
+                <el-button type="primary" :loading="approvalSubmitting" :disabled="approvalSubmitting" @click="submitApprovalOperation">提交</el-button>
               </div>
             </div>
           </footer>
@@ -4713,8 +4717,8 @@
             </button>
           </section>
           <div v-show="!orderWorkbenchCollapsed" class="flow-status-reminders contract-status-reminders">
-            <div><b>风险与提醒</b><span>{{ orderDraft.type === 'purchase' ? '2项风险 · 1项提醒' : '3项风险' }}</span></div>
-            <template v-if="orderDraft.type === 'purchase'"><button class="risk-item risk-critical" @click="openSupplierDetail(orderDraft.partyName, 'supplier')"><span>供应商状态</span><strong class="risk-status-tag">黑名单</strong></button><button class="risk-item risk-critical" @click="ElMessage.info('查看供应商已付款超期未入库明细')"><span>已付款超期未入库金额</span><strong class="risk-value">¥120,000.00</strong></button><button class="risk-item risk-normal" @click="ElMessage.info('查看采购订单任务执行状态')"><span>采购订单任务执行状态待关注</span><strong class="reminder-status-tag">需关注</strong></button></template
+            <div><b>风险与提醒</b><span>{{ orderDraft.type === 'purchase' ? '2项风险' : '3项风险' }}</span></div>
+            <template v-if="orderDraft.type === 'purchase'"><button class="risk-item risk-critical" @click="openSupplierDetail(orderDraft.partyName, 'supplier')"><span>供应商状态</span><strong class="risk-status-tag">黑名单</strong></button><button class="risk-item risk-critical" @click="ElMessage.info('查看供应商已付款超期未入库明细')"><span>已付款超期未入库金额</span><strong class="risk-value">¥120,000.00</strong></button></template
             ><template v-else><button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期应收明细')"><span>客户存在超期应收</span><strong class="risk-value">¥249,836.00</strong></button><button class="risk-item risk-critical" @click="ElMessage.info('查看客户额度占用明细')"><span>当前可用额度为负</span><strong class="risk-value">¥524,692.00</strong></button><button class="risk-item risk-critical" @click="ElMessage.info('查看客户超期明细')"><span>当前最长超期</span><strong class="risk-value">34 天</strong></button></template>
           </div></div>
         </aside>
@@ -5115,6 +5119,7 @@ const keyword = ref(""),
 const approvalDecision = ref("approve");
 const approvalFollowed = ref(false);
 const approvalOperationRemark = ref("");
+const approvalSubmitting = ref(false);
 const approvalReturnNodeRows = reactive([
   { selected: true, order: "01", name: "提交审批", approver: "代莉", opinion: "-" },
   { selected: true, order: "02", name: "合同金额审核", approver: "管理员", opinion: "-" },
@@ -6404,10 +6409,10 @@ const budgetReminders = computed(() => {
   }
   if (slowSkuCount.value) {
     items.push({
-      text: mode.value === "audit" ? "请重点复核 " : "当前预算包含 ",
-      riskValue: `${slowSkuCount.value}种低流速商品`,
+      text: mode.value === "audit" ? "低流速商品，请复核采购数量及销售计划" : "低流速商品",
+      riskValue: `${slowSkuCount.value}种`,
       level: "reminder",
-      suffix: mode.value === "audit" ? "的采购数量及销售计划" : "",
+      tagValue: true,
       target: "goods",
     });
   }
@@ -7575,6 +7580,7 @@ function submitContractChange() {
   openContractChangePage("audit", activeContractChangePage.value?.data);
 }
 function completeContractChangeApproval() {
+  if (approvalSubmitting.value) return;
   if (approvalDecision.value === "reject" && !approvalOperationRemark.value.trim()) {
     return ElMessage.warning("请填写驳回原因");
   }
@@ -7583,7 +7589,9 @@ function completeContractChangeApproval() {
     if (!selectedReturnNodes.length) return ElMessage.warning("请至少选择一个退回节点");
     if (!approvalOperationRemark.value.trim()) return ElMessage.warning("请填写退回原因");
   }
+  approvalSubmitting.value = true;
   ElMessage.success("合同变更审批操作已提交");
+  approvalSubmitting.value = false;
 }
 function jumpToContractChangeModule(id) {
   const container = contractChangeScrollArea.value;
@@ -8300,6 +8308,7 @@ function completeAudit() {
   switchView("approval");
 }
 function submitApprovalOperation() {
+  if (approvalSubmitting.value) return;
   if (
     ["reject", "return"].includes(approvalDecision.value) &&
     !approvalOperationRemark.value.trim()
@@ -8316,6 +8325,8 @@ function submitApprovalOperation() {
   if (approvalDecision.value === "return" && !selectedReturnNodes.length) {
     return ElMessage.warning("请至少选择一个退回节点");
   }
+
+  approvalSubmitting.value = true;
 
   if (approvalDecision.value === "return") {
     const firstReturnNode = selectedReturnNodes[0].name;
@@ -8338,6 +8349,7 @@ function submitApprovalOperation() {
     switchView("approval");
     approvalDecision.value = "approve";
     approvalOperationRemark.value = "";
+    approvalSubmitting.value = false;
     return;
   }
 
@@ -8371,6 +8383,7 @@ function submitApprovalOperation() {
 
   approvalDecision.value = "approve";
   approvalOperationRemark.value = "";
+  approvalSubmitting.value = false;
 }
 function cancelApprovalReturn() {
   approvalDecision.value = "approve";
@@ -11216,7 +11229,7 @@ onMounted(() => {
   font-size: 12px;
 }
 .contract-status-reminders > button.risk-normal {
-  grid-template-columns: 6px minmax(0, 1fr);
+  grid-template-columns: 6px minmax(0, 1fr) auto;
   background: #fffdf8;
 }
 .contract-status-reminders > button.risk-normal::before {
@@ -15757,9 +15770,14 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   left: 220px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
   background: #eef1f5;
 }
 .contract-change-page > .document-header {
+  grid-column: 1 / -1;
+  grid-row: 1;
   box-sizing: border-box;
   width: 100%;
   min-height: 72px;
@@ -15903,35 +15921,45 @@ onMounted(() => {
   margin-top: 14px;
 }
 .contract-change-page > .document-layout {
-  height: calc(100% - 132px);
+  display: contents;
 }
 .contract-change-page > .document-layout > .document-scroll {
+  grid-column: 1;
+  grid-row: 2;
   box-sizing: border-box;
   height: 100%;
-  margin-right: 300px;
+  min-height: 0;
+  margin-right: 0;
   padding: 14px 18px 80px;
   overflow: auto;
 }
 .contract-change-page.contract-change-readonly > .document-layout > .document-scroll {
-  margin-right: 300px;
+  margin-right: 0;
 }
 .contract-change-page > .document-layout > .contract-side-directory {
-  position: absolute;
-  top: 132px;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  top: 0 !important;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  grid-column: 2;
+  grid-row: 2;
   box-sizing: border-box;
-  width: 300px;
+  width: auto;
+  min-height: 0;
   padding: 10px 12px;
   overflow: visible;
   background: #eef1f5;
   border-left: 1px solid #dfe6ef;
 }
 .contract-change-page.workbench-collapsed > .document-layout > .document-scroll {
-  margin-right: 30px;
+  margin-right: 0;
+}
+.contract-change-page.workbench-collapsed {
+  grid-template-columns: minmax(0, 1fr) 30px;
 }
 .contract-change-page.workbench-collapsed > .document-layout > .contract-side-directory {
-  width: 30px;
+  width: auto;
   padding: 0;
   background: transparent;
 }
@@ -16444,14 +16472,11 @@ onMounted(() => {
   .unchanged-settlement-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .contract-change-page > .document-layout > .document-scroll {
-    margin-right: 270px;
+  .contract-change-page {
+    grid-template-columns: minmax(0, 1fr) 270px;
   }
-  .contract-change-page.contract-change-readonly > .document-layout > .document-scroll {
-    margin-right: 270px;
-  }
-  .contract-change-page > .document-layout > .contract-side-directory {
-    width: 270px;
+  .contract-change-page.workbench-collapsed {
+    grid-template-columns: minmax(0, 1fr) 30px;
   }
 }
 
