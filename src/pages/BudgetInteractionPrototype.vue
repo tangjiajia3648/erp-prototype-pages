@@ -72,6 +72,7 @@
             >新建预算</el-button
           >
         </header>
+        <div class="prototype-list-scope-note"><InfoFilled /><span><b>原型范围说明：</b>该列表沿用正式系统现状，仅作为进入新建、编辑、详情和审批页面的入口；本次不调整列表字段、筛选和操作。</span></div>
         <div class="filters">
           <el-segmented
             v-model="listStatus"
@@ -172,6 +173,7 @@
             >新增销售订单</el-button
           >
         </header>
+        <div class="prototype-list-scope-note"><InfoFilled /><span><b>原型范围说明：</b>该列表沿用正式系统现状，仅作为进入新建、编辑、详情和审批页面的入口；本次不调整列表字段、筛选和操作。</span></div>
         <div class="filters">
           <el-segmented
             v-model="saleOrderStatus"
@@ -321,6 +323,7 @@
             >新增采购订单</el-button
           >
         </header>
+        <div class="prototype-list-scope-note"><InfoFilled /><span><b>原型范围说明：</b>该列表沿用正式系统现状，仅作为进入新建、编辑、详情和审批页面的入口；本次不调整列表字段、筛选和操作。</span></div>
         <div class="filters">
           <el-segmented
             v-model="purchaseOrderStatus"
@@ -455,6 +458,7 @@
             >重置筛选</el-button
           >
         </header>
+        <div class="prototype-list-scope-note"><InfoFilled /><span><b>原型范围说明：</b>该列表沿用正式系统现状，仅作为进入新建、编辑、详情和审批页面的入口；本次不调整列表字段、筛选和操作。</span></div>
         <el-tabs v-model="approvalTab">
           <el-tab-pane
             :label="`待办 ${approvalCounts.pending}`"
@@ -582,13 +586,7 @@
             <p>统一管理采购合同、销售合同及其关联业务</p>
           </div>
         </header>
-        <el-tabs v-model="contractManageTab"
-          ><el-tab-pane label="单项合同" name="singleContract" /><el-tab-pane
-            label="销售框架协议"
-            name="saleFrameworkAgreement" /><el-tab-pane
-            label="采购框架协议"
-            name="purchaseFrameworkAgreement"
-        /></el-tabs>
+        <div class="prototype-list-scope-note"><InfoFilled /><span><b>原型范围说明：</b>该列表沿用正式系统现状，仅作为进入新建、编辑、详情和审批页面的入口；本次不调整列表字段、筛选和操作。</span></div>
         <div class="filters">
           <el-select
             v-model="contractTypeFilter"
@@ -823,6 +821,7 @@
                 "
                 >{{ activeContractPage.data.status }}</el-tag
               >
+              <el-tag v-if="activeContractPage.data.hasChange" type="info" effect="plain">已变更</el-tag>
             </h1>
             <p class="document-meta">
               <span v-if="activeContractPage.data.status === '审批中'"
@@ -1058,7 +1057,7 @@
               >
             </div>
             <GoodsDetailTabs ref="contractDetailGoodsTabs" :main-label="activeContractPage.data.type === 'purchase' ? '采购清单' : '销售清单'">
-            <el-table :data="goods" border size="small"
+            <el-table :data="contractDetailGoods" border size="small"
               ><el-table-column
                 prop="skuCode"
                 label="SKU编码"
@@ -1122,9 +1121,9 @@
               ></el-table
             >
             <div class="goods-table-summary">
-              <span>SKU种类：{{ goods.length }}</span>
-              <span>合计数量：{{ goodsTotalQuantity }}</span>
-              <span>合计金额：{{ formatContractMoney(goodsTotalAmount(activeContractPage.data.type)) }}</span>
+              <span>SKU种类：{{ contractDetailGoods.length }}</span>
+              <span>合计数量：{{ contractDetailGoodsTotalQuantity }}</span>
+              <span>合计金额：{{ formatContractMoney(contractDetailGoodsTotalAmount) }}</span>
             </div>
             </GoodsDetailTabs>
           </article>
@@ -1133,7 +1132,7 @@
           >
             <SectionTitle number="04" title="合同信息" />
             <el-form label-position="top" disabled
-              ><el-row :gutter="16"
+              ><el-row :gutter="16" class="contract-detail-info-grid"
                 ><el-col :span="24" class="contract-field-group-title"
                   >合同生成方式</el-col
                 ><el-col :span="8"
@@ -1163,6 +1162,20 @@
                   ><el-col :span="24" class="contract-field-group-title"
                     >合同金额与结算</el-col
                   ><el-col :span="8"
+                    ><el-form-item label="合同总金额（含税）"
+                      ><el-input
+                        :model-value="
+                          activeContractPage.data.amount
+                        " /></el-form-item></el-col
+                  ><el-col :span="8"
+                    ><el-form-item label="合同总金额（不含税）"
+                      ><el-input
+                        :model-value="formatContractMoney(contractDetailNetAmount)" /></el-form-item></el-col
+                  ><el-col :span="8"
+                    ><el-form-item label="合同税额"
+                      ><el-input
+                        :model-value="formatContractMoney(contractDetailTaxAmount)" /></el-form-item></el-col
+                  ><el-col :span="8"
                     ><el-form-item label="合同税率情况"
                       ><el-input model-value="13%" /></el-form-item></el-col
                   ><el-col :span="8"
@@ -1174,20 +1187,6 @@
                       "
                       ><el-input
                         model-value="货到付款" /></el-form-item></el-col
-                  ><el-col :span="8"
-                    ><el-form-item label="合同总金额（含税）"
-                      ><el-input
-                        :model-value="
-                          activeContractPage.data.amount
-                        " /></el-form-item></el-col
-                  ><el-col :span="8"
-                    ><el-form-item label="合同总金额（不含税）"
-                      ><el-input
-                        model-value="¥336,283.19" /></el-form-item></el-col
-                  ><el-col :span="8"
-                    ><el-form-item label="合同税额"
-                      ><el-input
-                        model-value="¥43,716.81" /></el-form-item></el-col
                   ><el-col :span="8"
                     ><el-form-item
                       :label="
@@ -1205,7 +1204,7 @@
                       "
                       ><el-input
                         model-value="2026-09-20" /></el-form-item></el-col
-                  ><el-col :span="8"
+                  ><el-col :span="8" class="contract-detail-settlement-wide"
                     ><el-form-item
                       :label="
                         activeContractPage.data.type === 'purchase'
@@ -1216,12 +1215,18 @@
                         model-value="到货验收后30个工作日内支付100%货款" /></el-form-item></el-col></template></el-row></el-form
             ><el-collapse
               v-if="activeContractPage.data.contractMode !== 'framework'"
-              class="secondary-contract-info"
-              ><el-collapse-item title="交付、履约与用印"
-                ><el-form label-position="top" disabled
+              class="secondary-contract-info contract-info-disclosure"
+              ><el-collapse-item name="delivery-seal"
+                ><template #title>
+                  <div class="contract-info-collapse-summary">
+                    <strong>其他合同信息</strong>
+                    <span>交付履约{{ activeContractPage.data.type === 'purchase' ? '6' : '10' }}项 · 用印6项</span>
+                  </div>
+                </template>
+                <el-form label-position="top" disabled
                   ><el-row :gutter="16"
-                    ><el-col :span="24" class="contract-field-group-title"
-                      >交付与履约</el-col
+                    ><el-col :span="24" class="contract-disclosure-subtitle-cell"
+                      ><h4 class="contract-disclosure-subtitle">交付与履约</h4></el-col
                     ><el-col :span="8"
                       ><el-form-item label="签约地点"
                         ><el-input model-value="成都" /></el-form-item></el-col
@@ -1285,8 +1290,8 @@
                         ><el-form-item label="质保条件"
                           ><el-input
                             model-value="原厂质保一年" /></el-form-item></el-col></template
-                    ><el-col :span="24" class="contract-field-group-title"
-                      >用印信息</el-col
+                    ><el-col :span="24" class="contract-disclosure-subtitle-cell"
+                      ><h4 class="contract-disclosure-subtitle">用印信息</h4></el-col
                     ><el-col :span="8"
                       ><el-form-item label="用印方式"
                         ><el-input
@@ -1445,20 +1450,26 @@
             />
           </article>
           <article
-            v-if="activeContractPage.data.status === '已生效'"
+            v-if="activeContractPage.data.status === '已生效' && activeContractChangeRecords.length"
             class="section-card contract-readonly-section"
           >
             <SectionTitle number="06" title="合同变更记录" />
-            <el-table :data="contractChangeRecords" border size="small">
+            <el-table :data="activeContractChangeRecords" border size="small">
               <el-table-column prop="code" label="变更单编号" min-width="180">
                 <template #default="{ row }"><el-link type="primary" @click="openContractChangeRecord(row)">{{ row.code }}</el-link></template>
               </el-table-column>
               <el-table-column prop="status" label="变更状态" width="110">
-                <template #default="{ row }"><el-tag type="warning">{{ row.status }}</el-tag></template>
+                <template #default="{ row }"><el-tag :type="row.status === '已生效' ? 'success' : 'warning'">{{ row.status }}</el-tag></template>
               </el-table-column>
               <el-table-column prop="applicant" label="申请人" width="110" />
               <el-table-column prop="appliedAt" label="申请时间" width="170" />
-              <el-table-column prop="amountChange" label="合同金额变化" width="140" align="right" />
+              <el-table-column prop="beforeAmount" label="变更前合同金额" width="150" align="right" />
+              <el-table-column prop="adjustmentAmount" label="本次调整金额" width="140" align="right" />
+              <el-table-column prop="afterAmount" label="变更后合同金额" width="150" align="right" />
+              <el-table-column prop="changedGoodsCount" label="变更商品" width="100" align="right">
+                <template #default="{ row }">{{ row.changedGoodsCount }}项</template>
+              </el-table-column>
+              <el-table-column prop="effectiveAt" label="生效时间" width="170" />
             </el-table>
           </article>
           <article
@@ -2800,13 +2811,13 @@
               <span>原合同：<el-link type="primary">{{ activeContractChangePage.data.code }}</el-link></span>
               <span>{{ activeContractChangePage.data.type === "purchase" ? "供应商" : "客户" }}：<el-link type="primary" @click="openContractPartyDetail(activeContractChangePage.data.enterprise, activeContractChangePage.data.type)">{{ activeContractChangePage.data.enterprise }}</el-link></span>
               <span>合同负责人：<el-link type="primary" @click="openOwnerDetail(activeContractChangePage.data.owner)">{{ activeContractChangePage.data.owner }}</el-link></span>
-              <span>{{ contractChangeReadonly ? '申请时间：2026-09-11 10:30' : '来源：预算修改审批通过后创建待办' }}</span>
+              <span>{{ contractChangeReadonly ? `申请时间：${activeContractChangePage.data.appliedAt || '2026-09-11 10:30'}` : '来源：预算修改审批通过后创建待办' }}</span>
             </p>
           </div>
           <div class="contract-detail-header-metrics">
-            <div><span>原合同金额</span><strong>{{ formatContractMoney(contractChangeOriginalAmount) }}</strong></div>
-            <div><span>本次变更金额</span><strong>{{ formatContractChangeDifference(contractChangeAmountDifference) }}</strong></div>
-            <div><span>变更后总金额</span><strong>{{ formatContractMoney(contractChangeAmount) }}</strong></div>
+            <div><span>变更前合同金额</span><strong>{{ formatContractMoney(contractChangeOriginalAmount) }}</strong></div>
+            <div><span>本次调整金额</span><strong>{{ formatContractChangeDifference(contractChangeAmountDifference) }}</strong></div>
+            <div><span>变更后合同金额</span><strong>{{ formatContractMoney(contractChangeAfterAmount) }}</strong></div>
             <div><span>变更商品</span><strong>{{ contractChangeGoods.length }}项</strong></div>
           </div>
         </header>
@@ -2823,6 +2834,7 @@
               <SectionTitle number="02" title="原合同基础信息" />
               <div class="change-summary-grid">
                 <div><span>原合同编号</span><el-link type="primary">{{ activeContractChangePage.data.code }}</el-link></div>
+                <div><span>原合同签约金额</span><strong>{{ formatContractMoney(contractChangeOriginalSignedAmount) }}</strong></div>
                 <div><span>合同类型</span><strong>{{ activeContractChangePage.data.typeLabel }}</strong></div>
                 <div><span>业务类型</span><strong>FA业务 / FA-囤货分销</strong></div>
                 <div><span>{{ activeContractChangePage.data.type === "purchase" ? "供应商" : "客户" }}</span><el-link type="primary" @click="openContractPartyDetail(activeContractChangePage.data.enterprise, activeContractChangePage.data.type)">{{ activeContractChangePage.data.enterprise }}</el-link></div>
@@ -2896,11 +2908,45 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column label="原数量" width="95" align="right"><template #default="{ row }">{{ row.isNew ? '—' : row.originalQuantity }}</template></el-table-column>
-                <el-table-column label="变更后数量" width="145" align="right"><template #default="{ row }"><el-input-number v-if="contractChangeEditable" v-model="row.quantity" :min="0" controls-position="right" /><span v-else :class="{ 'contract-change-value-changed': row.isNew || row.quantity !== row.originalQuantity }">{{ row.quantity }}</span></template></el-table-column>
-                <el-table-column label="原单价" width="125" align="right"><template #default="{ row }">{{ row.isNew ? '—' : formatContractMoney(row.originalPrice) }}</template></el-table-column>
-                <el-table-column label="变更后单价" width="145" align="right"><template #default="{ row }"><el-input-number v-if="contractChangeEditable" v-model="row.price" :min="0" :precision="2" controls-position="right" /><span v-else :class="{ 'contract-change-value-changed': row.isNew || row.price !== row.originalPrice }">{{ formatContractMoney(row.price) }}</span></template></el-table-column>
+                <el-table-column
+                  prop="specModel"
+                  label="配置说明"
+                  min-width="180"
+                  show-overflow-tooltip
+                >
+                  <template #default="{ row }">{{ row.specModel || '—' }}</template>
+                </el-table-column>
+                <el-table-column :label="activeContractChangePage.data.type === 'sale' ? '原销售数量' : '原采购数量'" width="110" align="right"><template #default="{ row }">{{ row.isNew ? '—' : row.originalQuantity }}</template></el-table-column>
+                <el-table-column :label="activeContractChangePage.data.type === 'sale' ? '变更后销售数量' : '变更后采购数量'" width="160" align="right"><template #default="{ row }"><el-input-number v-if="contractChangeEditable" v-model="row.quantity" :min="0" controls-position="right" /><span v-else :class="{ 'contract-change-value-changed': row.isNew || row.quantity !== row.originalQuantity }">{{ row.quantity }}</span></template></el-table-column>
+                <el-table-column :label="activeContractChangePage.data.type === 'sale' ? '原销售单价' : '原采购单价'" width="125" align="right"><template #default="{ row }">{{ row.isNew ? '—' : formatContractMoney(row.originalPrice) }}</template></el-table-column>
+                <el-table-column :label="activeContractChangePage.data.type === 'sale' ? '变更后销售单价' : '变更后采购单价'" width="160" align="right"><template #default="{ row }"><el-input-number v-if="contractChangeEditable" v-model="row.price" :min="0" :precision="2" controls-position="right" /><span v-else :class="{ 'contract-change-value-changed': row.isNew || row.price !== row.originalPrice }">{{ formatContractMoney(row.price) }}</span></template></el-table-column>
+                <el-table-column label="原合计金额" width="135" align="right"><template #default="{ row }">{{ row.isNew ? '—' : formatContractMoney(Number(row.originalQuantity || 0) * Number(row.originalPrice || 0)) }}</template></el-table-column>
                 <el-table-column label="变更后金额" width="135" align="right"><template #default="{ row }">{{ formatContractMoney(Number(row.quantity || 0) * Number(row.price || 0)) }}</template></el-table-column>
+                <template v-if="activeContractChangePage.data.type === 'purchase'">
+                  <el-table-column prop="budgetQuantity" label="预算数量" width="105" align="right"><template #default="{ row }">{{ row.budgetQuantity ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="availableQuantity" label="预算可用数量" width="125" align="right"><template #default="{ row }">{{ row.availableQuantity ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="lastPurchasePrice" label="上次采购单价" width="130" align="right"><template #default="{ row }">{{ row.lastPurchasePrice ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="currentStockQuantity" label="库存数量" width="105" align="right"><template #default="{ row }">{{ row.currentStockQuantity ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="referenceSalePrice" label="单台销售价（元）" width="145" align="right"><template #default="{ row }">{{ row.referenceSalePrice ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="saleCycle" label="预计销售周期（天）" width="155" align="right"><template #default="{ row }">{{ row.saleCycle ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="priceProtection" label="预提单台价保（元）" width="160" align="right"><template #default="{ row }">{{ row.priceProtection ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="priceProtectionDate" label="预提价保到账日期" width="155"><template #default="{ row }">{{ row.priceProtectionDate || '—' }}</template></el-table-column>
+                </template>
+                <template v-if="activeContractChangePage.data.type === 'sale' && contractChangeSalesSource === 'budget'">
+                  <el-table-column prop="limitPrice" label="销售限价" width="110" align="right"><template #default="{ row }">{{ row.limitPrice ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="externalPurchaseQuantity" label="外采数量" width="105" align="right"><template #default="{ row }">{{ row.externalPurchaseQuantity ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="currentStockQuantity" label="当前商品库存量" width="135" align="right"><template #default="{ row }">{{ row.currentStockQuantity ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="usedStockQuantity" label="使用库存商品数量" width="150" align="right"><template #default="{ row }">{{ row.usedStockQuantity ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="stockUnitCost" label="库存商品单台成本价（元）" width="190" align="right"><template #default="{ row }">{{ row.stockUnitCost ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="priceProtection" label="外采商品预提单台价保（元）" width="215" align="right"><template #default="{ row }">{{ row.priceProtection ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="priceProtectionDate" label="预计价保到账日期" width="150"><template #default="{ row }">{{ row.priceProtectionDate || '—' }}</template></el-table-column>
+                </template>
+                <template v-if="activeContractChangePage.data.type === 'sale' && contractChangeSalesSource === 'salesOrder'">
+                  <el-table-column prop="deliveryOrderMode" label="交货单生成方式" width="140"><template #default="{ row }">{{ row.deliveryOrderMode || '—' }}</template></el-table-column>
+                  <el-table-column prop="partialOutboundAllowed" label="允许部分出库" width="125"><template #default="{ row }">{{ row.partialOutboundAllowed || '—' }}</template></el-table-column>
+                  <el-table-column prop="limitPrice" label="销售限价" width="110" align="right"><template #default="{ row }">{{ row.limitPrice ?? '—' }}</template></el-table-column>
+                  <el-table-column prop="outboundWarehouse" label="出库仓库" min-width="180"><template #default="{ row }">{{ row.outboundWarehouse || '—' }}</template></el-table-column>
+                </template>
                 <el-table-column v-if="contractChangeEditable" label="操作" width="80" fixed="right"><template #default="{ row, $index }"><el-button v-if="row.isNew" link type="danger" @click="removeContractChangeGoods($index)">删除</el-button><span v-else>—</span></template></el-table-column>
               </el-table>
               <div class="goods-table-summary">
@@ -2911,46 +2957,52 @@
             </article>
 
             <article id="contract-change-files" class="section-card">
-              <SectionTitle number="05" title="合同信息与补充协议" />
+              <SectionTitle number="05" title="合同变更信息" />
               <section class="contract-change-contract-group">
               <div class="contract-change-group-heading">
                 <strong>原合同信息</strong>
                 <el-tag type="info" size="small" effect="plain">只读</el-tag>
               </div>
-              <div class="change-summary-grid original-contract-field-grid original-contract-key-fields">
+              <h4 class="change-subtitle contract-change-secondary-title">合同生成方式</h4>
+              <div class="change-summary-grid original-contract-field-grid contract-change-generation-grid">
                 <div><span>合同情况</span><strong>上传合同</strong></div>
-                <div><span>合同税率情况</span><strong>13%</strong></div>
-                <div><span>{{ activeContractChangePage.data.type === "purchase" ? "付款方式" : "回款方式" }}</span><strong>货到付款</strong></div>
-                <div><span>{{ activeContractChangePage.data.type === "purchase" ? "采购账期" : "销售账期" }}</span><strong>{{ activeContractChangePage.data.billTime || 30 }}天</strong></div>
+              </div>
+              <h4 class="change-subtitle contract-change-secondary-title">合同金额与结算</h4>
+              <div class="change-summary-grid original-contract-field-grid original-contract-key-fields contract-change-settlement-grid">
                 <div><span>合同总金额（含税）</span><strong>{{ formatContractMoney(contractChangeOriginalAmount) }}</strong></div>
                 <div><span>合同总金额（不含税）</span><strong>¥336,283.19</strong></div>
                 <div><span>合同税额</span><strong>¥43,716.81</strong></div>
+                <div><span>合同税率情况</span><strong>13%</strong></div>
+                <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === "purchase" ? "付款方式" : "回款方式" }}</span><strong>货到付款</strong></div>
+                <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === "purchase" ? "采购账期" : "销售账期" }}</span><strong>{{ activeContractChangePage.data.billTime || 30 }}天</strong></div>
               </div>
-              <h4 class="change-subtitle">原合同文件</h4>
+              <h4 class="change-subtitle contract-change-secondary-title">原合同文件</h4>
               <el-table :data="contractChangeFiles.filter(file => file.source === '原合同文件')" border size="small">
-                <el-table-column prop="name" label="文件名" min-width="240"><template #default="{ row }"><el-link type="primary" @click="previewContractFile(row)">{{ row.name }}</el-link></template></el-table-column>
+                <el-table-column prop="name" label="文件名" min-width="240"><template #default="{ row }"><el-link type="primary" @click="previewContractFile(row)">{{ activeContractChangePage.data.type === 'purchase' ? row.name : row.name.replace('采购', '销售') }}</el-link></template></el-table-column>
                 <el-table-column prop="size" label="大小" width="100" /><el-table-column prop="version" label="版本" width="90" />
                 <el-table-column prop="companyTemplate" label="是否公司模板" width="130" />
                 <el-table-column label="是否配置印章" width="130"><template #default="{ row }">{{ row.sealConfigured ? '是' : '否' }}</template></el-table-column>
                 <el-table-column prop="sealCount" label="配置印章数量" width="130" align="center" />
               </el-table>
-              <el-collapse v-model="originalContractExpanded" class="original-contract-detail-collapse">
+              <el-collapse v-model="originalContractExpanded" class="original-contract-detail-collapse contract-info-disclosure">
                 <el-collapse-item name="full">
                   <template #title>
-                    <div class="original-contract-collapse-summary">
-                      <strong>{{ originalContractExpanded.includes('full') ? '收起其他原合同信息' : '其他原合同信息（8项）' }}</strong>
-                      <span v-if="!originalContractExpanded.includes('full')">结算、交付、履约、用印、邮寄及备注</span>
-                      <em>{{ originalContractExpanded.includes('full') ? '已展开' : '点击展开' }}</em>
+                    <div class="contract-info-collapse-summary">
+                      <strong>其他原合同信息</strong>
+                      <span>结算2项 · 交付履约2项 · 用印及邮寄6项</span>
                     </div>
                   </template>
-                  <h4 class="change-subtitle">其他结算信息</h4>
+                  <h4 class="contract-disclosure-subtitle">其他结算信息</h4>
                   <div class="change-summary-grid original-contract-field-grid">
                     <div><span>{{ activeContractChangePage.data.type === "purchase" ? "预计付款日期" : "预计回款日期" }}</span><strong>2026-09-20</strong></div>
                     <div><span>{{ activeContractChangePage.data.type === "purchase" ? "货款结算" : "回款约定" }}</span><strong>到货验收后30个工作日内支付100%货款</strong></div>
                   </div>
-                  <h4 class="change-subtitle">交付、履约与用印</h4>
+                  <h4 class="contract-disclosure-subtitle">交付与履约</h4>
                   <div class="change-summary-grid original-contract-field-grid">
                     <div><span>签约地点</span><strong>成都</strong></div><div><span>技术服务</span><strong>提供安装调试及技术支持</strong></div>
+                  </div>
+                  <h4 class="contract-disclosure-subtitle">用印信息</h4>
+                  <div class="change-summary-grid original-contract-field-grid">
                     <div><span>用印方式</span><strong>电子用印</strong></div><div><span>用印情况</span><strong>双方用印</strong></div>
                     <div><span>印章需求</span><strong>合同专用章</strong></div><div><span>审批后自动用印</span><strong>是</strong></div>
                     <div><span>是否需要邮寄</span><strong>否</strong></div><div><span>备注</span><strong>以最终用印文件为准</strong></div>
@@ -2961,26 +3013,23 @@
 
               <section class="contract-change-contract-group">
               <div class="contract-change-group-heading">
-                <strong>补充协议信息</strong>
-                <el-tag type="primary" size="small" effect="plain">本次变更</el-tag>
+                <strong>本次合同变更信息</strong>
               </div>
               <template v-if="contractChangeEditable">
               <el-form label-position="top">
-                <div class="contract-field-group-title">合同生成方式</div>
+                <div class="contract-field-group-title contract-change-secondary-title">合同生成方式</div>
                 <el-form-item label="合同情况" required class="contract-mode-form-item">
                   <el-radio-group v-model="contractChangeFileMode" class="contract-mode-cards contract-change-mode-cards">
                     <el-radio label="upload">
                       <strong>上传合同</strong>
-                      <span>上传本次补充协议文件，并重新进入合同审核流程</span>
                     </el-radio>
                     <el-radio label="framework">
                       <strong>适用框架协议</strong>
-                      <span>选择框架协议，并上传对应订单证明文件</span>
                     </el-radio>
                   </el-radio-group>
                 </el-form-item>
                 <el-row v-if="contractChangeFileMode === 'framework'" :gutter="16">
-                  <el-col :span="12">
+                  <el-col :span="6">
                     <el-form-item label="选择框架协议">
                       <div class="framework-agreement-selector" @click="contractChangeEditable && openFrameworkAgreementDialog()">
                         <el-input model-value="KJXY-2026-0086" readonly />
@@ -2988,13 +3037,13 @@
                       </div>
                     </el-form-item>
                   </el-col>
-                  <el-col :span="12">
+                  <el-col :span="6">
                     <el-form-item label="框架协议附件"><el-link type="primary">框架协议正文-KJXY-2026-0086.pdf</el-link></el-form-item>
                   </el-col>
                 </el-row>
                 <el-row v-if="contractChangeFileMode === 'upload'" :gutter="16">
-                  <el-col :span="12">
-                    <el-form-item label="补充协议编号" required>
+                  <el-col :span="6">
+                    <el-form-item label="变更文件编号" required>
                       <div class="contract-code-action">
                         <el-input v-model="contractChangeContractCode" placeholder="请输入合同编号" />
                         <el-button v-if="contractChangeEditable" @click="generateContractChangeCode">生成合同编号</el-button>
@@ -3002,58 +3051,58 @@
                     </el-form-item>
                   </el-col>
                 </el-row>
-                <div class="contract-field-group-title">合同金额与结算</div>
+                <div class="contract-field-group-title contract-change-secondary-title">合同金额与结算</div>
                 <el-row :gutter="16">
                   <template v-if="contractChangeFileMode !== 'framework'">
-                    <el-col :span="8"><el-form-item label="合同总金额（含税）"><el-input :model-value="formatContractMoney(contractChangeAmount)" disabled /></el-form-item></el-col>
-                    <el-col :span="8"><el-form-item label="合同总金额（不含税）"><el-input :model-value="formatContractMoney(contractChangeNetAmount)" disabled /></el-form-item></el-col>
-                    <el-col :span="8"><el-form-item label="合同税额"><el-input :model-value="formatContractMoney(contractChangeAmount - contractChangeNetAmount)" disabled /></el-form-item></el-col>
-                    <el-col :span="8"><el-form-item label="合同税率情况"><el-select v-model="contractChangeTerms.taxRate"><el-option v-for="rate in 20" :key="rate" :label="`${rate}%`" :value="`${rate}%`" /></el-select></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item label="合同总金额（含税）"><el-input :model-value="formatContractMoney(contractChangeAmount)" disabled /></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item label="合同总金额（不含税）"><el-input :model-value="formatContractMoney(contractChangeNetAmount)" disabled /></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item label="合同税额"><el-input :model-value="formatContractMoney(contractChangeAmount - contractChangeNetAmount)" disabled /></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item label="合同税率情况"><el-select v-model="contractChangeTerms.taxRate"><el-option v-for="rate in 20" :key="rate" :label="`${rate}%`" :value="`${rate}%`" /></el-select></el-form-item></el-col>
                   </template>
-                  <el-col :span="8"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式'"><el-select v-model="contractChangeTerms.payWay"><el-option label="货到付款" value="货到付款" /><el-option label="款到发货" value="款到发货" /><el-option label="分阶段付款" value="分阶段付款" /></el-select></el-form-item></el-col>
+                  <el-col :span="6"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式'"><el-select v-model="contractChangeTerms.payWay"><el-option label="货到付款" value="货到付款" /><el-option label="款到发货" value="款到发货" /><el-option label="分阶段付款" value="分阶段付款" /></el-select></el-form-item></el-col>
                   <template v-if="contractChangeFileMode !== 'framework'">
-                    <el-col :span="8"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定'"><el-input v-model="contractChangeTerms.settlement" /></el-form-item></el-col>
-                    <el-col :span="8"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '采购账期（天）' : '销售账期（天）'"><el-input v-model="contractChangeTerms.billTime" inputmode="numeric"><template #suffix>天</template></el-input></el-form-item></el-col>
-                    <el-col :span="8"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '预计付款日期' : '预计回款日期'"><el-date-picker v-model="contractChangeTerms.paymentDate" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '采购账期（天）' : '销售账期（天）'"><el-input v-model="contractChangeTerms.billTime" inputmode="numeric"><template #suffix>天</template></el-input></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '预计付款日期' : '预计回款日期'"><el-date-picker v-model="contractChangeTerms.paymentDate" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col>
+                    <el-col :span="6"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定'"><el-input v-model="contractChangeTerms.settlement" /></el-form-item></el-col>
                   </template>
                 </el-row>
               </el-form>
               </template>
               <template v-else>
-                <div class="contract-field-group-title">合同生成方式</div>
-                <div class="change-summary-grid contract-change-readonly-grid">
+                <div class="contract-field-group-title contract-change-secondary-title">合同生成方式</div>
+                <div class="change-summary-grid contract-change-readonly-grid contract-change-generation-grid">
                   <div><span>合同情况</span><strong>{{ contractChangeFileMode === 'framework' ? '适用框架协议' : '上传合同' }}</strong></div>
-                  <div v-if="contractChangeFileMode === 'upload'"><span>补充协议编号</span><strong>{{ contractChangeContractCode }}</strong></div>
+                  <div v-if="contractChangeFileMode === 'upload'"><span>变更文件编号</span><strong>{{ contractChangeContractCode }}</strong></div>
                   <div v-else><span>选择框架协议</span><el-link type="primary">KJXY-2026-0086</el-link></div>
                   <div v-if="contractChangeFileMode === 'framework'"><span>框架协议附件</span><el-link type="primary">框架协议正文-KJXY-2026-0086.pdf</el-link></div>
                 </div>
-                <div class="contract-field-group-title">合同金额与结算</div>
-                <div class="change-summary-grid contract-change-readonly-grid">
+                <div class="contract-field-group-title contract-change-secondary-title">合同金额与结算</div>
+                <div class="change-summary-grid contract-change-readonly-grid contract-change-settlement-grid">
                   <template v-if="contractChangeFileMode !== 'framework'">
                     <div><span>合同总金额（含税）</span><strong>{{ formatContractMoney(contractChangeAmount) }}</strong></div>
                     <div><span>合同总金额（不含税）</span><strong>{{ formatContractMoney(contractChangeNetAmount) }}</strong></div>
                     <div><span>合同税额</span><strong>{{ formatContractMoney(contractChangeAmount - contractChangeNetAmount) }}</strong></div>
                     <div><span>合同税率情况</span><strong>{{ contractChangeTerms.taxRate }}</strong></div>
                   </template>
-                  <div><span>{{ activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式' }}</span><strong>{{ contractChangeTerms.payWay }}</strong></div>
+                  <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式' }}</span><strong>{{ contractChangeTerms.payWay }}</strong></div>
                   <template v-if="contractChangeFileMode !== 'framework'">
-                    <div><span>{{ activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定' }}</span><strong>{{ contractChangeTerms.settlement }}</strong></div>
-                    <div><span>{{ activeContractChangePage.data.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ contractChangeTerms.billTime }}天</strong></div>
-                    <div><span>{{ activeContractChangePage.data.type === 'purchase' ? '预计付款日期' : '预计回款日期' }}</span><strong>{{ contractChangeTerms.paymentDate }}</strong></div>
+                    <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ contractChangeTerms.billTime }}天</strong></div>
+                    <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === 'purchase' ? '预计付款日期' : '预计回款日期' }}</span><strong>{{ contractChangeTerms.paymentDate }}</strong></div>
+                    <div class="contract-change-settlement-rule"><span>{{ activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定' }}</span><strong>{{ contractChangeTerms.settlement }}</strong></div>
                   </template>
                 </div>
               </template>
 
               <div class="contract-file-section-heading">
-                <h4 class="change-subtitle">{{ contractChangeFileMode === 'framework' ? '订单证明文件' : '补充协议文件' }}</h4>
+                <h4 class="change-subtitle contract-change-secondary-title">{{ contractChangeFileMode === 'framework' ? '订单证明文件' : '合同变更文件' }}</h4>
               </div>
               <div v-if="contractChangeEditable" class="contract-file-table-toolbar">
                 <el-upload action="#" :auto-upload="false" :show-file-list="false" :limit="10" :on-change="handleContractChangeFileUpload">
-                  <el-button class="compact-upload-trigger" type="primary" link :icon="Upload">{{ contractChangeFileMode === 'framework' ? '上传订单证明文件' : '上传附件' }}</el-button>
+                  <el-button class="compact-upload-trigger" type="primary" link :icon="Upload">{{ contractChangeFileMode === 'framework' ? '上传订单证明文件' : '上传合同变更文件' }}</el-button>
                 </el-upload>
-                <span>上限10个，最大100MB/个<span v-if="contractChangeFileMode === 'upload'">；上传补充协议文件后重新进入合同审核流程</span></span>
+                <span>上限10个，最大100MB/个</span>
               </div>
-              <el-table :data="contractChangeFiles.filter(file => file.source !== '原合同文件')" border size="small" class="contract-file-table" empty-text="暂未上传补充协议文件">
+              <el-table :data="contractChangeFiles.filter(file => file.source !== '原合同文件')" border size="small" class="contract-file-table" empty-text="暂未上传合同变更文件">
                 <el-table-column prop="name" label="文件名" min-width="250">
                   <template #default="{ row }"><el-link type="primary" @click="previewContractFile(row)">{{ row.name }}</el-link></template>
                 </el-table-column>
@@ -3075,8 +3124,9 @@
               </el-table>
 
               <template v-if="contractChangeFileMode !== 'framework'">
-                <h4 class="change-subtitle">用印信息</h4>
-                <el-form v-if="contractChangeEditable" label-position="top">
+                <template v-if="contractChangeEditable">
+                <h4 class="change-subtitle contract-change-secondary-title">用印信息</h4>
+                <el-form label-position="top">
                   <el-row :gutter="16">
                     <el-col :span="8"><el-form-item label="用印方式"><el-select v-model="contractChangeSeal.printingMethod"><el-option label="电子用印" value="电子用印" /><el-option label="线下用印" value="线下用印" /></el-select></el-form-item></el-col>
                     <el-col :span="8"><el-form-item label="用印情况"><el-select v-model="contractChangeSeal.printingSituation"><el-option label="双方用印" value="双方用印" /><el-option label="我方用印" value="我方用印" /><el-option label="对方用印" value="对方用印" /></el-select></el-form-item></el-col>
@@ -3088,14 +3138,26 @@
                     <el-col v-if="contractChangeSeal.needMail" :span="12"><el-form-item label="收件人信息"><el-input v-model="contractChangeSeal.receiveInfo" /></el-form-item></el-col>
                   </el-row>
                 </el-form>
-                <div v-else class="change-summary-grid contract-change-readonly-grid">
-                  <div><span>用印方式</span><strong>{{ contractChangeSeal.printingMethod }}</strong></div>
-                  <div><span>用印情况</span><strong>{{ contractChangeSeal.printingSituation }}</strong></div>
-                  <div><span>印章需求</span><strong>{{ contractChangeSeal.sealRequirements }}</strong></div>
-                  <div><span>审批后自动用印</span><strong>{{ contractChangeSeal.autoSeal ? '是' : '否' }}</strong></div>
-                  <div><span>是否需要邮寄</span><strong>{{ contractChangeSeal.needMail ? '是' : '否' }}</strong></div>
-                  <div v-if="contractChangeSeal.needMail"><span>收件人信息</span><strong>{{ contractChangeSeal.receiveInfo || '—' }}</strong></div>
-                </div>
+                </template>
+                <el-collapse v-else class="contract-info-disclosure contract-change-supplement-disclosure">
+                  <el-collapse-item name="supplement-seal">
+                    <template #title>
+                      <div class="contract-info-collapse-summary">
+                        <strong>用印与邮寄信息</strong>
+                        <span>用印3项 · 审批及邮寄{{ contractChangeSeal.needMail ? '3' : '2' }}项</span>
+                      </div>
+                    </template>
+                    <h4 class="contract-disclosure-subtitle">用印信息</h4>
+                    <div class="change-summary-grid contract-change-readonly-grid">
+                      <div><span>用印方式</span><strong>{{ contractChangeSeal.printingMethod }}</strong></div>
+                      <div><span>用印情况</span><strong>{{ contractChangeSeal.printingSituation }}</strong></div>
+                      <div><span>印章需求</span><strong>{{ contractChangeSeal.sealRequirements }}</strong></div>
+                      <div><span>审批后自动用印</span><strong>{{ contractChangeSeal.autoSeal ? '是' : '否' }}</strong></div>
+                      <div><span>是否需要邮寄</span><strong>{{ contractChangeSeal.needMail ? '是' : '否' }}</strong></div>
+                      <div v-if="contractChangeSeal.needMail"><span>收件人信息</span><strong>{{ contractChangeSeal.receiveInfo || '—' }}</strong></div>
+                    </div>
+                  </el-collapse-item>
+                </el-collapse>
               </template>
               </section>
             </article>
@@ -3239,9 +3301,9 @@
             <div v-show="!contractChangeWorkbenchCollapsed" class="contract-side-scroll">
               <section v-if="contractChangeEditable" class="flow-revenue-summary">
                 <header><strong>关键指标</strong><span>实时计算</span></header>
-                <div><span>原合同金额</span><strong>{{ formatContractMoney(contractChangeOriginalAmount) }}</strong></div>
-                <div><span>本次变更金额</span><strong>{{ formatContractChangeDifference(contractChangeAmountDifference) }}</strong></div>
-                <div><span>变更后总金额</span><strong>{{ formatContractMoney(contractChangeAmount) }}</strong></div>
+                <div><span>变更前合同金额</span><strong>{{ formatContractMoney(contractChangeOriginalAmount) }}</strong></div>
+                <div><span>本次调整金额</span><strong>{{ formatContractChangeDifference(contractChangeAmountDifference) }}</strong></div>
+                <div><span>变更后合同金额</span><strong>{{ formatContractMoney(contractChangeAfterAmount) }}</strong></div>
               </section>
               <section class="flow-navigation-card">
                 <header><strong>模块导航</strong></header>
@@ -3251,7 +3313,7 @@
                 <div><b>风险与提醒</b><span>2项风险 · 1项提醒</span></div>
                 <button class="risk-item risk-critical"><span>已产生订单</span><strong class="risk-status-tag">提交时校验</strong></button>
                 <button class="risk-item risk-critical"><span>出入库及收付款影响</span><strong class="risk-status-tag">提交时校验</strong></button>
-                <button class="risk-item risk-normal"><span>补充协议文件提交后重新审核</span><strong class="reminder-status-tag">需关注</strong></button>
+                <button class="risk-item risk-normal"><span>合同变更文件提交后重新审核</span><strong class="reminder-status-tag">需关注</strong></button>
               </div>
             </div>
           </aside>
@@ -4395,6 +4457,16 @@
                   ><div v-if="orderPageReadonly || orderUsesExistingContract" class="order-readonly-value emphasized-day-value">{{ orderDraft.billTime }} 天</div
                   ><el-input v-else :model-value="String(orderDraft.billTime)" inputmode="numeric" maxlength="4" placeholder="请输入整数" @input="setOrderDayValue('billTime', $event)"><template #suffix>天</template></el-input></el-form-item></el-col
               ></el-row></el-form>
+            <div class="subsection-heading order-attachment-subsection-heading">附件与说明</div>
+            <div class="attachment-layout order-attachment-layout">
+              <div class="attachment-column">
+                <h3>附件</h3><el-upload v-if="!orderPageReadonly" class="inline-attachment-upload" action="#" :auto-upload="false" :show-file-list="false" :limit="10" :file-list="orderAttachmentFiles" :on-change="handleOrderAttachmentChange"
+                  ><div class="inline-upload-row"><span class="inline-upload-action"><Upload /><b>上传附件</b></span><span class="inline-upload-help">上限10个，最大100MB/个</span></div></el-upload><div v-if="orderAttachmentFiles.length" class="supporting-file-list order-attachment-file-list"><div v-for="file in orderAttachmentFiles" :key="file.uid" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.sizeLabel }}</small><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button v-if="orderPageReadonly" link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button><el-button v-else link type="danger" @click="removeOrderAttachmentFile(file)">删除</el-button></div></div><div v-else class="supporting-file-empty">暂未上传附件</div>
+              </div>
+              <div class="note-column">
+                <h3>补充说明</h3><el-input v-model="orderDraft.remark" type="textarea" :disabled="orderPageReadonly" :rows="5" maxlength="500" show-word-limit placeholder="请输入补充说明（选填）" />
+              </div>
+            </div>
           </article>
           <article id="order-related" class="section-card">
             <SectionTitle number="02" title="关联单据" /><el-form
@@ -4413,7 +4485,7 @@
           </article>
           <article id="order-goods" class="section-card order-goods-section">
             <SectionTitle
-              number="03"
+              number="04"
               :title="orderDraft.type === 'purchase' ? '采购明细' : '销售明细'"
               ><template v-if="!orderPageReadonly && !orderUsesExistingContract"><el-button type="primary" :icon="Plus" @click="openProductDialog">添加商品</el-button
               ><el-button :icon="Upload">导入商品</el-button></template></SectionTitle
@@ -4458,7 +4530,7 @@
             </GoodsDetailTabs>
           </article>
           <article v-if="showGeneratedSaleContract" id="order-contract-info" class="section-card">
-            <SectionTitle number="04" title="销售合同信息" />
+            <SectionTitle number="05" title="销售合同信息" />
             <el-form label-position="top" class="order-contract-form" :disabled="orderPageReadonly">
               <div class="contract-field-group-title">合同生成方式</div>
               <el-form-item label="合同情况" required class="contract-mode-form-item"><el-radio-group v-model="orderDraft.contractSituation" class="contract-mode-cards"><el-radio label="generated"><strong>系统生成合同</strong><span>填写合同条款后，由系统生成合同文件</span></el-radio><el-radio label="upload"><strong>上传合同</strong><span>填写合同编号并上传已有合同文件</span></el-radio><el-radio label="framework"><strong>适用框架协议</strong><span>选择框架协议，仅上传订单证明文件</span></el-radio></el-radio-group></el-form-item>
@@ -4506,7 +4578,7 @@
           </article>
           <article id="order-delivery" class="section-card">
             <SectionTitle
-              :number="showGeneratedSaleContract ? '05' : '04'"
+              number="03"
               :title="
                 orderDraft.type === 'purchase' ? '到货与结算' : '收货与交付'
               "
@@ -4573,25 +4645,11 @@
             </el-tabs>
           </article>
           <article
-            id="order-attachments"
-            class="section-card order-attachments-section"
-          >
-            <SectionTitle :number="orderDraft.type === 'purchase' && orderPageReadonly ? '06' : showGeneratedSaleContract ? '06' : '05'" title="附件与说明" /><div class="attachment-layout order-attachment-layout"
-              ><div class="attachment-column"
-                ><h3>附件</h3><el-upload v-if="!orderPageReadonly" class="inline-attachment-upload" action="#" :auto-upload="false" :show-file-list="false" :limit="10" :file-list="orderAttachmentFiles" :on-change="handleOrderAttachmentChange"
-                  ><div class="inline-upload-row"><span class="inline-upload-action"><Upload /><b>上传附件</b></span><span class="inline-upload-help">上限10个，最大100MB/个</span></div></el-upload><div v-if="orderAttachmentFiles.length" class="supporting-file-list order-attachment-file-list"><div v-for="file in orderAttachmentFiles" :key="file.uid" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.sizeLabel }}</small><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button v-if="orderPageReadonly" link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button><el-button v-else link type="danger" @click="removeOrderAttachmentFile(file)">删除</el-button></div></div><div v-else class="supporting-file-empty">暂未上传附件</div
-                ></div
-              ><div class="note-column"
-                ><h3>补充说明</h3><el-input v-model="orderDraft.remark" type="textarea" :disabled="orderPageReadonly" :rows="5" maxlength="500" show-word-limit placeholder="请输入补充说明（选填）" /></div
-              ></div
-            >
-          </article>
-          <article
             v-if="orderPageReadonly && orderDraft.type === 'sale'"
             id="order-customer-credit"
             class="section-card customer-credit-section"
           >
-            <SectionTitle :number="showGeneratedSaleContract ? '07' : '06'" title="客户资信信息" />
+            <SectionTitle :number="showGeneratedSaleContract ? '06' : '05'" title="客户资信信息" />
             <CustomerCreditPanel
               :snapshot="activeOrderPage.orderPageMode === 'audit'"
               @inspect="(label) => ElMessage.info(`查看${label}明细`)"
@@ -5461,10 +5519,21 @@ const contractChangeGoods = ref([
     spuName: "ThinkPad X1 笔记本",
     skuCode: "TP-X1C-U7-32-1T",
     skuName: "ThinkPad X1 Carbon Ultra 7 / 32G / 1TB",
+    specModel: "Ultra 7 / 32G / 1TB / 黑色",
     originalQuantity: 28,
     quantity: 30,
     originalPrice: 10900,
     price: 10800,
+    limitPrice: "¥12,800.00",
+    externalPurchaseQuantity: 28,
+    currentStockQuantity: 0,
+    usedStockQuantity: 0,
+    stockUnitCost: "¥0.00",
+    priceProtection: "¥0.00",
+    priceProtectionDate: "—",
+    deliveryOrderMode: "自动生成",
+    partialOutboundAllowed: "不允许",
+    outboundWarehouse: "成都中心仓",
     isNew: false,
   },
   {
@@ -5473,20 +5542,50 @@ const contractChangeGoods = ref([
     spuName: "ThinkBook 16+ 笔记本",
     skuCode: "TB16-U5-32-1T",
     skuName: "ThinkBook 16+ Ultra 5 / 32G / 1TB",
+    specModel: "Ultra 5 / 32G / 1TB / 灰色",
     originalQuantity: 0,
     quantity: 2,
     originalPrice: 0,
     price: 9800,
+    limitPrice: "¥9,200.00",
+    externalPurchaseQuantity: 0,
+    currentStockQuantity: 6,
+    usedStockQuantity: 2,
+    stockUnitCost: "¥8,100.00",
+    priceProtection: "¥100.00",
+    priceProtectionDate: "2026-10-15",
+    deliveryOrderMode: "自动生成",
+    partialOutboundAllowed: "不允许",
+    outboundWarehouse: "成都中心仓",
     isNew: true,
   },
 ]);
 const contractChangeRecords = ref([
   {
     code: "HTBG-202609-00001",
+    sourceContractCode: "CGHT-202608-00192",
     status: "审批中",
     applicant: "张晨",
     appliedAt: "2026-09-11 10:30",
-    amountChange: "-¥36,400.00",
+    beforeAmount: "¥380,000.00",
+    adjustmentAmount: "-¥36,400.00",
+    afterAmount: "¥343,600.00",
+    changedGoodsCount: 2,
+    effectiveAt: "—",
+    originalSignedAmount: "¥380,000.00",
+  },
+  {
+    code: "HTBG-202609-00002",
+    sourceContractCode: "XSHT-202608-00021",
+    status: "已生效",
+    applicant: "王芳",
+    appliedAt: "2026-09-12 15:20",
+    beforeAmount: "¥356,000.00",
+    adjustmentAmount: "-¥12,400.00",
+    afterAmount: "¥343,600.00",
+    changedGoodsCount: 2,
+    effectiveAt: "2026-09-13 10:05",
+    originalSignedAmount: "¥356,000.00",
   },
 ]);
 const pendingContracts = ref([
@@ -5503,8 +5602,7 @@ const pendingContracts = ref([
     created: "2026-08-22 16:05",
   },
 ]);
-const contractManageTab = ref("singleContract"),
-  contractKeyword = ref(""),
+const contractKeyword = ref(""),
   contractTypeFilter = ref(""),
   contractDocumentTypeFilter = ref(""),
   contractStatusFilter = ref(""),
@@ -5527,6 +5625,13 @@ const contractRows = ref([
     budgetCode: "YSGL-202608-02658",
     orderCode: "CGDD-202608-00103",
     amount: "¥343,600.00",
+    changeBeforeAmount: "¥380,000.00",
+    changeAfterAmount: "¥343,600.00",
+    changeAdjustmentAmount: "-¥36,400.00",
+    changedGoodsCount: 2,
+    originalSignedAmount: "¥380,000.00",
+    appliedAt: "2026-09-11 10:30",
+    effectiveAt: "—",
     owner: "张晨",
     status: "审批中",
     created: "2026-09-11 10:30",
@@ -5546,11 +5651,37 @@ const contractRows = ref([
     created: "2026-08-20 14:30",
   },
   {
+    code: "HTBG-202609-00002",
+    sourceContractCode: "XSHT-202608-00021",
+    documentType: "change",
+    documentTypeLabel: "变更合同",
+    billTime: 30,
+    type: "sale",
+    typeLabel: "销售合同",
+    contractMode: "change",
+    goodsSource: "budget",
+    enterprise: "成都启航科技有限公司",
+    budgetCode: "YSGL-202608-02660",
+    orderCode: "-",
+    amount: "¥343,600.00",
+    changeBeforeAmount: "¥356,000.00",
+    changeAfterAmount: "¥343,600.00",
+    changeAdjustmentAmount: "-¥12,400.00",
+    changedGoodsCount: 2,
+    originalSignedAmount: "¥356,000.00",
+    appliedAt: "2026-09-12 15:20",
+    effectiveAt: "2026-09-13 10:05",
+    owner: "王芳",
+    status: "已生效",
+    created: "2026-09-12 15:20",
+  },
+  {
     code: "XSHT-202608-00018",
     billTime: 30,
     type: "sale",
     typeLabel: "销售合同",
     contractMode: "upload",
+    goodsSource: "salesOrder",
     enterprise: "重庆恒信贸易有限公司",
     budgetCode: "YSGL-202608-02658",
     orderCode: "XSDD-202608-00286",
@@ -5580,12 +5711,15 @@ const contractRows = ref([
     type: "sale",
     typeLabel: "销售合同",
     contractMode: "generated",
+    goodsSource: "budget",
     enterprise: "成都启航科技有限公司",
     budgetCode: "YSGL-202608-02660",
     orderCode: "-",
-    amount: "¥356,000.00",
+    amount: "¥343,600.00",
+    originalSignedAmount: "¥356,000.00",
+    hasChange: true,
     owner: "王芳",
-    status: "待提交",
+    status: "已生效",
     created: "2026-08-24 09:18",
   },
   {
@@ -5667,7 +5801,7 @@ const contractFiles = ref([
     counterpartySealed: "否",
   },
   {
-    name: "补充协议.pdf",
+    name: "合同变更文件.pdf",
     size: "1.2 MB",
     companyTemplate: "识别中",
     sealConfigured: true,
@@ -6627,18 +6761,7 @@ const filteredBudgets = computed(() =>
   }),
 );
 const filteredContractRows = computed(() => {
-  const tabRows =
-    contractManageTab.value === "singleContract"
-      ? contractRows.value.filter((row) => row.contractMode !== "framework")
-      : contractManageTab.value === "saleFrameworkAgreement"
-        ? contractRows.value.filter(
-            (row) => row.type === "sale" && row.contractMode === "framework",
-          )
-        : contractRows.value.filter(
-            (row) =>
-              row.type === "purchase" && row.contractMode === "framework",
-          );
-  return tabRows.filter(
+  return contractRows.value.filter((row) => row.contractMode !== "framework").filter(
     (row) =>
       (!contractTypeFilter.value || row.type === contractTypeFilter.value) &&
       (!contractDocumentTypeFilter.value ||
@@ -6755,7 +6878,16 @@ const budgetChangedGoodsPreview = computed(() =>
   }),
 );
 const contractChangeOriginalAmount = computed(() => {
-  const raw = activeContractChangePage.value?.data?.amount || "¥380,000.00";
+  const raw = activeContractChangePage.value?.data?.changeBeforeAmount ||
+    activeContractChangePage.value?.data?.amount ||
+    "¥380,000.00";
+  return Number(String(raw).replace(/[¥,]/g, "")) || 380000;
+});
+const contractChangeOriginalSignedAmount = computed(() => {
+  const raw = activeContractChangePage.value?.data?.originalSignedAmount ||
+    activeContractChangePage.value?.data?.changeBeforeAmount ||
+    activeContractChangePage.value?.data?.amount ||
+    "¥380,000.00";
   return Number(String(raw).replace(/[¥,]/g, "")) || 380000;
 });
 const contractChangeAmount = computed(() =>
@@ -6767,9 +6899,18 @@ const contractChangeAmount = computed(() =>
 const contractChangeTotalQuantity = computed(() =>
   contractChangeGoods.value.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
 );
-const contractChangeAmountDifference = computed(
-  () => contractChangeAmount.value - contractChangeOriginalAmount.value,
-);
+const contractChangeAfterAmount = computed(() => {
+  const raw = activeContractChangePage.value?.data?.changeAfterAmount;
+  return raw
+    ? Number(String(raw).replace(/[¥,]/g, "")) || contractChangeAmount.value
+    : contractChangeAmount.value;
+});
+const contractChangeAmountDifference = computed(() => {
+  const raw = activeContractChangePage.value?.data?.changeAdjustmentAmount;
+  return raw
+    ? Number(String(raw).replace(/[¥,]/g, "")) || 0
+    : contractChangeAfterAmount.value - contractChangeOriginalAmount.value;
+});
 const contractChangeNetAmount = computed(() => {
   const rate = Number.parseFloat(contractChangeTerms.taxRate) || 0;
   return contractChangeAmount.value / (1 + rate / 100);
@@ -6780,6 +6921,12 @@ const contractChangeEditable = computed(() =>
 const contractChangeReadonly = computed(() =>
   ["detail", "audit"].includes(activeContractChangePage.value?.contractChangePageMode),
 );
+const contractChangeSalesSource = computed(() => {
+  const contract = activeContractChangePage.value?.data;
+  if (contract?.type !== "sale") return "";
+  if (contract.goodsSource) return contract.goodsSource;
+  return contract.orderCode && contract.orderCode !== "-" ? "salesOrder" : "budget";
+});
 const contractChangeAffectedOrderRows = computed(() => {
   const isPurchase = activeContractChangePage.value?.data?.type === "purchase";
   return [{
@@ -6827,7 +6974,7 @@ const contractChangeModules = computed(() => [
   { id: "contract-change-original", order: "02", label: "原合同基础信息" },
   { id: "contract-change-budget", order: "03", label: "预算修改记录" },
   { id: "contract-change-goods", order: "04", label: "合同商品变更" },
-  { id: "contract-change-files", order: "05", label: "合同信息与补充协议" },
+  { id: "contract-change-files", order: "05", label: "合同变更信息" },
   ...(contractChangeReadonly.value
       ? [
           { id: "contract-change-impact", order: "06", label: "影响单据" },
@@ -6864,6 +7011,43 @@ const activeContractPage = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);
   return tab?.contractPageMode === "detail" ? tab : null;
 });
+const activeContractChangeRecords = computed(() =>
+  contractChangeRecords.value.filter(
+    (record) => record.sourceContractCode === activeContractPage.value?.data?.code,
+  ),
+);
+const contractDetailGoods = computed(() => {
+  if (!activeContractPage.value?.data?.hasChange || activeContractPage.value?.data?.type !== "sale") {
+    return goods.value;
+  }
+  return goods.value.map((row, index) => ({
+    ...row,
+    purchaseQuantity: index === 0 ? 20 : 10,
+    salePrice: index === 0 ? 12600 : 9160,
+  }));
+});
+const contractDetailGoodsTotalQuantity = computed(() =>
+  contractDetailGoods.value.reduce(
+    (sum, row) => sum + Number(row.purchaseQuantity || 0),
+    0,
+  ),
+);
+const contractDetailGoodsTotalAmount = computed(() =>
+  contractDetailGoods.value.reduce(
+    (sum, row) =>
+      sum +
+      Number(row.purchaseQuantity || 0) *
+        Number(activeContractPage.value?.data?.type === "purchase" ? row.purchaseAmount : row.salePrice || 0),
+    0,
+  ),
+);
+const contractDetailAmountNumber = computed(() =>
+  Number(String(activeContractPage.value?.data?.amount || 0).replace(/[¥,]/g, "")) || 0,
+);
+const contractDetailNetAmount = computed(() => contractDetailAmountNumber.value / 1.13);
+const contractDetailTaxAmount = computed(
+  () => contractDetailAmountNumber.value - contractDetailNetAmount.value,
+);
 const activeContractChangePage = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);
   return tab?.contractChangePageMode ? tab : null;
@@ -7028,8 +7212,18 @@ const orderModules = computed(() => [
     status: orderAssociationReady.value ? "已完成" : "待完善",
   },
   {
-    id: "order-goods",
+    id: "order-delivery",
     order: "03",
+    label: orderDraft.type === "purchase" ? "到货与结算" : "收货与交付",
+    status:
+      orderDraft.type === "purchase" ||
+      (orderDraft.address && orderDraft.contact && orderDraft.phone)
+        ? "已完成"
+        : "待完善",
+  },
+  {
+    id: "order-goods",
+    order: "04",
     label: orderDraft.type === "purchase" ? "采购明细" : "销售明细",
     status: goods.value.length ? "已完成" : "待完善",
   },
@@ -7037,7 +7231,7 @@ const orderModules = computed(() => [
     ? [
         {
           id: "order-contract-info",
-          order: "04",
+          order: "05",
           label: "销售合同信息",
           status:
             orderDraft.signatureLocation && orderDraft.settlementTerms
@@ -7046,16 +7240,6 @@ const orderModules = computed(() => [
         },
       ]
     : []),
-  {
-    id: "order-delivery",
-    order: showGeneratedSaleContract.value ? "05" : "04",
-    label: orderDraft.type === "purchase" ? "到货与结算" : "收货与交付",
-    status:
-      orderDraft.type === "purchase" ||
-      (orderDraft.address && orderDraft.contact && orderDraft.phone)
-        ? "已完成"
-        : "待完善",
-  },
   ...(orderPageReadonly.value && orderDraft.type === "purchase"
     ? [
         {
@@ -7066,22 +7250,11 @@ const orderModules = computed(() => [
         },
       ]
     : []),
-  {
-    id: "order-attachments",
-    order:
-      orderPageReadonly.value && orderDraft.type === "purchase"
-        ? "06"
-        : showGeneratedSaleContract.value
-          ? "06"
-          : "05",
-    label: "附件与说明",
-    status: "待完善",
-  },
   ...(orderPageReadonly.value && orderDraft.type === "sale"
     ? [
         {
           id: "order-customer-credit",
-          order: showGeneratedSaleContract.value ? "07" : "06",
+          order: showGeneratedSaleContract.value ? "06" : "05",
           label: "客户资信信息",
           status: "2项异常",
         },
@@ -7119,12 +7292,13 @@ const contractDetailModules = computed(() => {
           },
         ]
       : []),
-    ...(activeContractPage.value?.data?.status === "已生效"
+    ...(activeContractPage.value?.data?.status === "已生效" &&
+    activeContractChangeRecords.value.length
       ? [
           {
             order: "06",
             label: "合同变更记录",
-            status: String(contractChangeRecords.value.length) + "项",
+            status: String(activeContractChangeRecords.value.length) + "项",
           },
         ]
       : []),
@@ -7396,6 +7570,13 @@ function openContractManagementRow(row, pageMode = "detail") {
       ...(originalContract || row),
       changeCode: row.code,
       changeStatus: row.status,
+      changeBeforeAmount: row.changeBeforeAmount,
+      changeAdjustmentAmount: row.changeAdjustmentAmount,
+      changeAfterAmount: row.changeAfterAmount || row.amount,
+      changedGoodsCount: row.changedGoodsCount,
+      originalSignedAmount: row.originalSignedAmount || originalContract?.originalSignedAmount,
+      appliedAt: row.appliedAt,
+      effectiveAt: row.effectiveAt,
       documentType: "change",
     });
   }
@@ -7465,7 +7646,8 @@ function confirmBudgetChangeSubmit() {
   dirty.value = false;
   ElMessage.success("预算修改已提交审批；审批通过后将按商品及所选合同编号通知对应合同负责人");
 }
-function resetContractChangeGoods() {
+function resetContractChangeGoods(contract = activeContractChangePage.value?.data) {
+  const isPurchase = contract?.type === "purchase";
   contractChangeGoods.value = [
     {
       id: 1,
@@ -7473,23 +7655,55 @@ function resetContractChangeGoods() {
       spuName: "ThinkPad X1 笔记本",
       skuCode: "TP-X1C-U7-32-1T",
       skuName: "ThinkPad X1 Carbon Ultra 7 / 32G / 1TB",
-      originalQuantity: 28,
-      quantity: 30,
-      originalPrice: 10900,
-      price: 10800,
+      specModel: "Ultra 7 / 32G / 1TB / 黑色",
+      originalQuantity: isPurchase ? 28 : 20,
+      quantity: isPurchase ? 30 : 20,
+      originalPrice: isPurchase ? 10900 : 13200,
+      price: isPurchase ? 10800 : 12600,
+      limitPrice: "¥12,800.00",
+      externalPurchaseQuantity: 28,
+      currentStockQuantity: 0,
+      usedStockQuantity: 0,
+      stockUnitCost: "¥0.00",
+      priceProtection: "¥0.00",
+      priceProtectionDate: "—",
+      deliveryOrderMode: "自动生成",
+      partialOutboundAllowed: "不允许",
+      outboundWarehouse: "成都中心仓",
+      budgetQuantity: 30,
+      availableQuantity: 30,
+      lastPurchasePrice: "¥10,950.00",
+      referenceSalePrice: "¥13,200.00",
+      saleCycle: 40,
       isNew: false,
     },
     {
       id: 2,
-      changeType: "新增",
+      changeType: isPurchase ? "新增" : "修改",
       spuName: "ThinkBook 16+ 笔记本",
       skuCode: "TB16-U5-32-1T",
       skuName: "ThinkBook 16+ Ultra 5 / 32G / 1TB",
-      originalQuantity: 0,
-      quantity: 2,
-      originalPrice: 0,
-      price: 9800,
-      isNew: true,
+      specModel: "Ultra 5 / 32G / 1TB / 灰色",
+      originalQuantity: isPurchase ? 0 : 10,
+      quantity: isPurchase ? 2 : 10,
+      originalPrice: isPurchase ? 0 : 9200,
+      price: isPurchase ? 9800 : 9160,
+      limitPrice: "¥9,200.00",
+      externalPurchaseQuantity: 0,
+      currentStockQuantity: 6,
+      usedStockQuantity: 2,
+      stockUnitCost: "¥8,100.00",
+      priceProtection: "¥100.00",
+      priceProtectionDate: "2026-10-15",
+      deliveryOrderMode: "自动生成",
+      partialOutboundAllowed: "不允许",
+      outboundWarehouse: "成都中心仓",
+      budgetQuantity: 12,
+      availableQuantity: isPurchase ? 4 : "—",
+      lastPurchasePrice: "¥8,300.00",
+      referenceSalePrice: "¥9,400.00",
+      saleCycle: 30,
+      isNew: isPurchase,
     },
   ];
 }
@@ -7503,7 +7717,7 @@ function openContractChangePage(pageMode, row = activeContractPage.value?.data) 
       title:
         pageMode === "create" || pageMode === "edit"
           ? "变更" + row.typeLabel
-          : (pageMode === "audit" ? "审批-" : "详情-") + "HTBG-00001",
+          : (pageMode === "audit" ? "审批-" : "详情-") + (row.changeCode || row.code || "合同变更"),
       closable: true,
       contractChangePageMode: pageMode,
       data: { ...row },
@@ -7515,11 +7729,25 @@ function openContractChangePage(pageMode, row = activeContractPage.value?.data) 
   currentContractChangeModule.value = "contract-change-reason";
   activeBudgetChangeRecord.value = contractBudgetChangeRecords.value[0]?.code || "";
   originalContractExpanded.value = [];
-  if (pageMode === "create" || pageMode === "edit") resetContractChangeGoods();
+  contractChangeContractCode.value = `${row.code || (row.type === "purchase" ? "CGHT" : "XSHT")}-BG01`;
+  resetContractChangeGoods(row);
   nextTick(() => contractChangeScrollArea.value?.scrollTo({ top: 0 }));
 }
 function openContractChangeRecord(row) {
-  openContractChangePage(row.status === "审批中" ? "audit" : "detail", activeContractPage.value?.data);
+  const originalContract = activeContractPage.value?.data;
+  openContractChangePage(row.status === "审批中" ? "audit" : "detail", {
+    ...originalContract,
+    changeCode: row.code,
+    changeStatus: row.status,
+    changeBeforeAmount: row.beforeAmount,
+    changeAdjustmentAmount: row.adjustmentAmount,
+    changeAfterAmount: row.afterAmount,
+    changedGoodsCount: row.changedGoodsCount,
+    originalSignedAmount: row.originalSignedAmount || originalContract?.originalSignedAmount,
+    appliedAt: row.appliedAt,
+    effectiveAt: row.effectiveAt,
+    documentType: "change",
+  });
 }
 function addContractChangeGoods() {
   contractChangeGoods.value.push({
@@ -7528,10 +7756,26 @@ function addContractChangeGoods() {
     spuName: "新增商品",
     skuCode: "NEW-SKU-" + String(contractChangeGoods.value.length + 1).padStart(2, "0"),
     skuName: "沿用原新增商品弹窗选择结果",
+    specModel: "—",
     originalQuantity: 0,
     quantity: 1,
     originalPrice: 0,
     price: 0,
+    limitPrice: "—",
+    externalPurchaseQuantity: "—",
+    currentStockQuantity: "—",
+    usedStockQuantity: "—",
+    stockUnitCost: "—",
+    priceProtection: "—",
+    priceProtectionDate: "—",
+    deliveryOrderMode: "—",
+    partialOutboundAllowed: "—",
+    outboundWarehouse: "—",
+    budgetQuantity: "—",
+    availableQuantity: "—",
+    lastPurchasePrice: "—",
+    referenceSalePrice: "—",
+    saleCycle: "—",
     isNew: true,
   });
   ElMessage.info("沿用原新增商品弹窗，本次不修改弹窗内容");
@@ -7542,7 +7786,7 @@ function removeContractChangeGoods(index) {
 }
 function handleContractChangeFileUpload(file) {
   contractChangeFiles.value.push({
-    name: file?.name || "补充协议文件.docx",
+    name: file?.name || "合同变更文件.docx",
     size: file?.size ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : "2.4 MB",
     version: "V2",
     companyTemplate: "否",
@@ -7550,14 +7794,14 @@ function handleContractChangeFileUpload(file) {
     sealCount: 0,
     source: "本次变更上传",
   });
-  ElMessage.success("补充协议文件已加入，提交后重新进入合同审核流程");
+  ElMessage.success("合同变更文件已加入");
 }
 function removeContractChangeFile(row) {
   contractChangeFiles.value = contractChangeFiles.value.filter((item) => item !== row);
 }
 function generateContractChangeCode() {
   contractChangeContractCode.value = `${activeContractChangePage.value?.data?.code || "HT"}-BG01`;
-  ElMessage.success("已生成补充协议编号");
+  ElMessage.success("已生成变更文件编号");
 }
 function saveContractChangeDraft() {
   ElMessage.success("合同变更草稿已保存");
@@ -7573,10 +7817,10 @@ function submitContractChange() {
     !contractChangeFiles.value.some((file) => file.source !== "原合同文件")
   ) {
     jumpToContractChangeModule("contract-change-files");
-    ElMessage.warning("请上传补充协议文件");
+    ElMessage.warning("请上传合同变更文件");
     return;
   }
-  ElMessage.success("合同变更及补充协议已提交新的审批流程");
+  ElMessage.success("合同变更已提交新的审批流程");
   openContractChangePage("audit", activeContractChangePage.value?.data);
 }
 function completeContractChangeApproval() {
@@ -8905,6 +9149,29 @@ onMounted(() => {
     color: #93a0ad;
     font-size: 13px;
   }
+}
+.prototype-list-scope-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 16px;
+  padding: 8px 12px;
+  border: 1px dashed #d9e0e7;
+  border-radius: 4px;
+  background: #f7f8fa;
+  color: #7b8794;
+  font-size: 12px;
+  line-height: 20px;
+}
+.prototype-list-scope-note > svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: #9aa5b1;
+}
+.prototype-list-scope-note b {
+  color: #5e6b78;
+  font-weight: 600;
 }
 .filters {
   display: flex;
@@ -13381,6 +13648,33 @@ onMounted(() => {
 .order-edit-page .section-heading h2 {
   font-size: 14px;
 }
+.order-document-scroll {
+  display: flex;
+  flex-direction: column;
+}
+.order-document-scroll #order-basic {
+  order: 1;
+}
+.order-document-scroll #order-related {
+  order: 2;
+}
+.order-document-scroll #order-delivery {
+  order: 3;
+}
+.order-document-scroll #order-goods {
+  order: 4;
+}
+.order-document-scroll #order-contract-info,
+.order-document-scroll #order-followup-documents {
+  order: 5;
+}
+.order-document-scroll #order-customer-credit {
+  order: 6;
+}
+.order-document-scroll > .bottom-actions,
+.order-document-scroll > .approval-operation-dock {
+  order: 100;
+}
 .order-edit-page :deep(.el-form-item) {
   margin-bottom: 12px;
 }
@@ -15761,6 +16055,51 @@ onMounted(() => {
 .order-edit-page .order-contract-form > .contract-field-group-title:first-child {
   margin-top: 6px;
 }
+.contract-detail-page .contract-detail-info .contract-detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 22px;
+  row-gap: 0;
+  margin: 0 !important;
+}
+.contract-detail-page .contract-detail-info {
+  display: flex;
+  flex-direction: column;
+}
+.contract-detail-page .contract-detail-info > .contract-nested-files {
+  order: 1;
+}
+.contract-detail-page .contract-detail-info > .contract-info-disclosure {
+  order: 2;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid > .el-col {
+  grid-column: span 3;
+  width: auto;
+  max-width: none;
+  padding: 0 !important;
+  flex: none;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid > .contract-field-group-title {
+  grid-column: 1 / -1;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid > .contract-detail-settlement-wide {
+  grid-column: span 6;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid > .contract-field-group-title {
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid > .contract-field-group-title:first-child {
+  margin-top: 2px;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid :deep(.el-form-item) {
+  margin-bottom: 10px;
+}
+.contract-detail-page .contract-detail-info .contract-detail-info-grid :deep(.el-form-item__label) {
+  margin-bottom: 3px;
+  padding-bottom: 0;
+  line-height: 20px;
+}
 
 /* 预算修改预览与合同变更：沿用原型一页面母版，只调整前端信息组织。 */
 .contract-change-page {
@@ -16035,7 +16374,7 @@ onMounted(() => {
 .unchanged-settlement-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px 22px;
+  gap: 14px 22px;
 }
 .change-summary-grid > div,
 .unchanged-settlement-grid > div {
@@ -16093,18 +16432,18 @@ onMounted(() => {
   border-left: 3px solid #86bfff;
 }
 .contract-change-contract-group {
-  margin-top: 14px;
-  padding: 0 14px 14px;
+  margin-top: 12px;
+  padding: 0 14px 12px;
   border: 1px solid #e5ebf2;
   border-radius: 5px;
   background: #fff;
 }
 .contract-change-group-heading {
-  min-height: 42px;
+  min-height: 38px;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 -14px 12px;
+  margin: 0 -14px 10px;
   padding: 0 14px;
   border-bottom: 1px solid #e8edf3;
   border-left: 3px solid #86bfff;
@@ -16121,7 +16460,7 @@ onMounted(() => {
   border-radius: 4px;
 }
 .original-contract-key-fields {
-  margin: 12px 0 18px;
+  margin: 8px 0 14px;
 }
 .contract-change-sku-name {
   display: flex;
@@ -16144,7 +16483,20 @@ onMounted(() => {
   border-radius: 3px;
 }
 .contract-change-readonly-grid {
-  margin: 12px 0 18px;
+  margin: 8px 0 14px;
+}
+.contract-change-page .contract-change-generation-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.contract-change-page .contract-change-settlement-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+.contract-change-page .contract-change-settlement-grid > div {
+  grid-column: span 3;
+}
+.contract-change-page .contract-change-settlement-grid > .contract-change-settlement-compact,
+.contract-change-page .contract-change-settlement-grid > .contract-change-settlement-rule {
+  grid-column: span 3;
 }
 .contract-change-readonly-grid strong {
   line-height: 22px;
@@ -16396,6 +16748,103 @@ onMounted(() => {
 .document-page .budget-detail-accordion .budget-disclosure-title > span {
   color: #34495e;
   font-weight: 600;
+}
+
+/* 合同信息中的低频字段采用轻量折叠行，不再形成独立灰色卡片。 */
+.document-page .contract-info-disclosure {
+  margin-top: 10px;
+  border: 0;
+  border-top: 1px solid #e8edf3;
+  border-bottom: 1px solid #e8edf3;
+  border-radius: 0;
+  background: #fff;
+}
+.document-page .contract-info-disclosure :deep(.el-collapse-item__header),
+.document-page .contract-info-disclosure :deep(.el-collapse-item.is-active .el-collapse-item__header) {
+  min-height: 46px;
+  padding: 0 2px;
+  border: 0;
+  background: #fff;
+}
+.document-page .contract-info-disclosure :deep(.el-collapse-item.is-active .el-collapse-item__header) {
+  border-bottom: 1px solid #edf1f5;
+}
+.document-page .contract-info-disclosure :deep(.el-collapse-item__content) {
+  padding: 6px 0 4px;
+}
+.contract-info-collapse-summary {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 8px;
+}
+.contract-info-collapse-summary strong {
+  flex: none;
+  color: #34495e;
+  font-size: 14px;
+  font-weight: 600;
+}
+.contract-info-collapse-summary span {
+  min-width: 0;
+  overflow: hidden;
+  color: #8795a4;
+  font-size: 12px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.document-page .contract-info-disclosure :deep(.el-collapse-item.is-active .contract-info-collapse-summary span) {
+  display: none;
+}
+.document-page .contract-disclosure-subtitle,
+.contract-change-page .contract-change-contract-group .contract-change-secondary-title {
+  box-sizing: border-box;
+  min-height: 26px;
+  margin: 14px 0 10px;
+  padding: 2px 0 2px 10px;
+  border: 0;
+  border-left: 3px solid #9fc9f3 !important;
+  border-radius: 0;
+  background: transparent;
+  color: #44515f;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+.contract-detail-page .contract-info-disclosure .contract-disclosure-subtitle-cell {
+  padding-left: 16px !important;
+}
+.contract-detail-page .contract-info-disclosure .contract-disclosure-subtitle-cell .contract-disclosure-subtitle {
+  width: 100%;
+}
+.contract-change-supplement-disclosure {
+  margin-bottom: 2px;
+}
+@media (max-width: 1180px) {
+  .contract-detail-page .contract-detail-info .contract-detail-info-grid > .el-col {
+    grid-column: span 6;
+  }
+  .contract-detail-page .contract-detail-info .contract-detail-info-grid > .contract-field-group-title,
+  .contract-detail-page .contract-detail-info .contract-detail-info-grid > .contract-detail-settlement-wide {
+    grid-column: 1 / -1;
+  }
+  .contract-change-page .contract-change-settlement-grid > div {
+    grid-column: span 6;
+  }
+  .contract-change-page .contract-change-settlement-grid > .contract-change-settlement-rule {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 760px) {
+  .contract-detail-page .contract-detail-info .contract-detail-info-grid > .el-col,
+  .contract-change-page .contract-change-settlement-grid > div {
+    grid-column: 1 / -1;
+  }
+  .contract-change-page .contract-change-generation-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* 基础字段值统一使用正常字重；仅标题摘要、计算结果、合计和异常值突出。 */
