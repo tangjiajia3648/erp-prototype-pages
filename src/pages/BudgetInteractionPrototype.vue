@@ -651,7 +651,7 @@
             prop="orderCode"
             label="关联订单"
             min-width="170"
-          /><el-table-column
+          ><template #default="{ row }"><el-link v-if="row.orderCode && row.orderCode !== '-'" type="primary" :underline="false" @click="openLinkedOrderByContract(row)">{{ row.orderCode }}</el-link><span v-else>—</span></template></el-table-column><el-table-column
             prop="amount"
             label="合同金额"
             width="135"
@@ -936,9 +936,12 @@
                 ><el-col :span="8"
                   ><el-form-item label="业务类型"
                     ><div class="contract-readonly-value">{{ businessTypeDisplay(activeContractPage.data.budget?.type) }}</div></el-form-item></el-col
-                ><el-col :span="8"
-                  ><el-form-item label="合同编号"
-                    ><div class="contract-readonly-value">{{ activeContractPage.data.code }}</div></el-form-item></el-col></el-row></el-form
+                 ><el-col :span="8"
+                   ><el-form-item label="合同编号"
+                     ><div class="contract-readonly-value">{{ activeContractPage.data.code }}</div></el-form-item></el-col
+                 ><el-col :span="8"
+                   ><el-form-item label="业务标签"
+                     ><div class="business-tag-list"><el-tag v-for="tag in (activeContractPage.data.businessTags || ['重点业务'])" :key="tag" type="primary" size="small" effect="light">{{ tag }}</el-tag></div></el-form-item></el-col></el-row></el-form
             ><el-collapse class="secondary-contract-info"
               ><el-collapse-item title="更多基础信息"
                 ><el-descriptions :column="3" border
@@ -982,8 +985,9 @@
                 <div class="embedded-budget-basic-grid">
                   <div><span>预算单编号</span><el-link type="primary" :underline="false" @click="openBudgetByCode(activeContractPage.data.budgetCode)">{{ activeContractPage.data.budgetCode }}</el-link></div>
                   <div><span>预算有效期</span><strong>60 天</strong></div>
-                  <div><span>业务类型</span><strong>{{ businessTypeDisplay(activeContractPage.data.budget?.type) }}</strong></div>
-                  <div><span>业务单元</span><strong>{{ activeContractPage.data.businessLine || '西南业务部' }}</strong></div>
+                   <div><span>业务类型</span><strong>{{ businessTypeDisplay(activeContractPage.data.budget?.type) }}</strong></div>
+                   <div><span>业务单元</span><strong>{{ activeContractPage.data.businessLine || '西南业务部' }}</strong></div>
+                   <div><span>业务标签</span><strong><el-tag type="primary" size="small" effect="light">重点业务</el-tag></strong></div>
                 </div><div class="split-panel contract-budget-plan">
                   <div>
                     <h4 class="contract-subtitle">预算计划</h4>
@@ -1015,10 +1019,7 @@
                               model-value="价格及毛利测算依据预算单"
                               type="textarea"
                               :rows="2" /></el-form-item></el-col
-                        ><el-col :span="24"
-                          ><el-form-item label="业务标签"
-                            ><el-input
-                              model-value="重点业务" /></el-form-item></el-col></el-row
+                        ></el-row
                     ></el-form>
                     <div class="embedded-budget-attachments"><h5>附件（{{ budgetAttachmentExamples.length }}）</h5><div class="budget-file-list"><div v-for="file in budgetAttachmentExamples" :key="file.name" class="file-row"><Document /><div><b :title="file.name">{{ file.name }}</b><span>{{ file.size }} · 李然上传 · 演示附件</span></div><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div></div>
                   </div>
@@ -1183,9 +1184,9 @@
                     ><el-form-item label="合同税率情况"
                       ><el-input model-value="13%" /></el-form-item></el-col
                   ><el-col :span="8"
-                    ><el-form-item label="付款方式"
+                    ><el-form-item :label="activeContractPage.data.type === 'purchase' ? '付款方式' : '回款方式'"
                       ><el-input
-                        model-value="货到付款" /></el-form-item></el-col
+                        :model-value="activeContractPage.data.type === 'purchase' ? '货到付款' : '先款后货'" /></el-form-item></el-col
                   ><el-col :span="8"
                     ><el-form-item
                       :label="
@@ -1195,9 +1196,9 @@
                       "
                       ><el-input :model-value="contractDetailBillTime" /></el-form-item></el-col
                   ><el-col :span="8" class="contract-detail-settlement-wide"
-                    ><el-form-item label="货款结算"
+                    ><el-form-item :label="activeContractPage.data.type === 'purchase' ? '货款结算' : '回款约定'"
                       ><el-input
-                        model-value="到货验收后30个工作日内支付100%货款" /></el-form-item></el-col></template></el-row></el-form
+                        :model-value="activeContractPage.data.type === 'purchase' ? '到货验收后30个工作日内支付100%货款' : '合同约定期限内回款'" /></el-form-item></el-col></template></el-row></el-form
             ><el-collapse
               v-if="activeContractPage.data.contractMode !== 'framework'"
               class="secondary-contract-info contract-info-disclosure"
@@ -1315,7 +1316,7 @@
               ><el-table-column label="文件名" min-width="210"
                 ><template #default="{ row }"
                   ><el-link type="primary" @click="previewContractFile(row)">{{
-                    row.name
+                    activeContractPage.data.type === 'sale' && row.name.includes('采购合同') ? row.name.replace('采购合同', '销售合同') : row.name
                   }}</el-link
                   ><el-dropdown trigger="click"
                     ><el-button
@@ -1808,8 +1809,8 @@
                           :label="option"
                           :value="option" /></el-select></el-form-item
                   ></el-col>
-                  <el-col :span="6"
-                    ><el-form-item
+                   <el-col :span="6"
+                     ><el-form-item
                       :label="isEditing ? '预算有效期（天）' : '预算有效期'"
                       required
                       ><el-input
@@ -1831,8 +1832,9 @@
                         }}天内完成销售、采购订单的创建
                       </div></el-form-item
                     ></el-col
-                  >
-                </el-row>
+                   >
+                  <el-col :span="6"><el-form-item label="业务标签"><el-select v-if="isEditing" v-model="form.businessTags" multiple tag-type="primary" class="business-tag-select"><el-option label="重点业务" value="重点业务" /><el-option label="项目业务" value="项目业务" /><el-option label="渠道业务" value="渠道业务" /></el-select><div v-else class="business-tag-list"><el-tag v-for="tag in form.businessTags" :key="tag" type="primary" size="small" effect="light">{{ tag }}</el-tag></div></el-form-item></el-col>
+                 </el-row>
                 <div class="type-fields">
                   <el-row :gutter="20">
                     <el-col
@@ -1885,11 +1887,6 @@
                       </el-form-item>
                     </el-col>
                   </el-row>
-                  <el-row v-if="budgetRobotFields.length" :gutter="20" class="robot-order-fields">
-                    <el-col v-for="fieldLabel in budgetRobotFields" :key="fieldLabel" :span="6">
-                      <el-form-item :label="fieldLabel"><el-input v-model="form.dynamic[`robot_${fieldLabel}`]" :placeholder="`请输入${fieldLabel}`" /></el-form-item>
-                    </el-col>
-                  </el-row>
                 </div>
                 <h3 class="budget-subsection-title transaction-title">
                   交易对象
@@ -1922,7 +1919,16 @@
                           label="张晨"
                           value="张晨" /></el-select></el-form-item
                   ></el-col>
+                  <el-col v-if="isRobotOrderSupplier" :span="8"><el-form-item label="是否由机器人下单"><div v-if="!isEditing" class="detail-result"><strong>{{ form.dynamic.robotOrder ? '是' : '否' }}</strong></div><el-switch v-else v-model="form.dynamic.robotOrder" inline-prompt active-text="是" inactive-text="否" /><div class="robot-order-trigger-tip">仅支持已接入机器人下单的供应商；当前供应商：{{ form.supplier }}</div></el-form-item></el-col>
                 </el-row>
+                <section v-if="budgetRobotFields.length" class="supplier-robot-panel">
+                  <div class="supplier-robot-panel__header"><div><strong>机器人下单信息（{{ form.supplier }}）</strong><span>以下字段仅适用于当前供应商</span></div><el-tag type="primary" size="small" effect="plain">供应商专属</el-tag></div>
+                  <el-row :gutter="20" class="robot-order-fields">
+                    <el-col v-for="fieldLabel in budgetRobotFields" :key="fieldLabel" :span="8">
+                      <el-form-item :label="fieldLabel"><el-input v-model="form.dynamic[`robot_${fieldLabel}`]" :disabled="fieldLabel === 'SEC业务'" :placeholder="`请输入${fieldLabel}`" /></el-form-item>
+                    </el-col>
+                  </el-row>
+                </section>
               </el-form>
             </article>
 
@@ -2050,7 +2056,6 @@
                         ></el-col
                       >
                       <el-col v-if="form.dynamic.marketEnvironment === '其他'" :span="24"><el-form-item label="其他说明"><el-input v-model="form.otherDescription" type="textarea" :rows="2" maxlength="500" show-word-limit /></el-form-item></el-col>
-                      <el-col :span="24"><el-form-item label="业务标签"><el-select v-model="form.businessTags" multiple><el-option label="重点业务" value="重点业务" /><el-option label="项目业务" value="项目业务" /><el-option label="渠道业务" value="渠道业务" /></el-select></el-form-item></el-col>
                       <el-col :span="24"
                         ><el-form-item label="利润说明"
                           ><el-input
@@ -2979,7 +2984,7 @@
                 <div><span>合同总金额（不含税）</span><strong>¥336,283.19</strong></div>
                 <div><span>合同税额</span><strong>¥43,716.81</strong></div>
                 <div><span>合同税率情况</span><strong>13%</strong></div>
-                <div class="contract-change-settlement-compact"><span>付款方式</span><strong>货到付款</strong></div>
+                <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式' }}</span><strong>{{ activeContractChangePage.data.type === 'purchase' ? '货到付款' : '先款后货' }}</strong></div>
                 <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === "purchase" ? "采购账期" : "销售账期" }}</span><strong>{{ activeContractChangePage.data.billTime || 30 }}天</strong></div>
               </div>
               <h4 class="change-subtitle contract-change-secondary-title">原合同文件</h4>
@@ -3000,7 +3005,7 @@
                   </template>
                   <h4 class="contract-disclosure-subtitle">其他结算信息</h4>
                   <div class="change-summary-grid original-contract-field-grid">
-                    <div><span>货款结算</span><strong>到货验收后30个工作日内支付100%货款</strong></div>
+                    <div><span>{{ activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定' }}</span><strong>{{ activeContractChangePage.data.type === 'purchase' ? '到货验收后30个工作日内支付100%货款' : '合同约定期限内回款' }}</strong></div>
                   </div>
                   <h4 class="contract-disclosure-subtitle">交付与履约</h4>
                   <div class="change-summary-grid original-contract-field-grid">
@@ -3064,10 +3069,10 @@
                     <el-col :span="6"><el-form-item label="合同税额"><el-input :model-value="formatContractMoney(contractChangeAmount - contractChangeNetAmount)" disabled /></el-form-item></el-col>
                     <el-col :span="6"><el-form-item label="合同税率情况"><el-select v-model="contractChangeTerms.taxRate"><el-option v-for="rate in 20" :key="rate" :label="`${rate}%`" :value="`${rate}%`" /></el-select></el-form-item></el-col>
                   </template>
-                  <el-col :span="6"><el-form-item label="付款方式"><el-select v-model="contractChangeTerms.payWay"><el-option label="货到付款" value="货到付款" /><el-option label="款到发货" value="款到发货" /><el-option label="分阶段付款" value="分阶段付款" /></el-select></el-form-item></el-col>
+                  <el-col :span="6"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式'"><el-select v-model="contractChangeTerms.payWay"><el-option label="货到付款" value="货到付款" /><el-option label="款到发货" value="款到发货" /><el-option label="分阶段付款" value="分阶段付款" /></el-select></el-form-item></el-col>
                   <template v-if="contractChangeFileMode !== 'framework'">
                     <el-col :span="6"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '采购账期（天）' : '销售账期（天）'"><el-input v-model="contractChangeTerms.billTime" inputmode="numeric"><template #suffix>天</template></el-input></el-form-item></el-col>
-                    <el-col :span="12"><el-form-item label="货款结算"><el-input v-model="contractChangeTerms.settlement" /></el-form-item></el-col>
+                    <el-col :span="12"><el-form-item :label="activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定'"><el-input v-model="contractChangeTerms.settlement" /></el-form-item></el-col>
                   </template>
                 </el-row>
               </el-form>
@@ -3088,10 +3093,10 @@
                     <div><span>合同税额</span><strong>{{ formatContractMoney(contractChangeAmount - contractChangeNetAmount) }}</strong></div>
                     <div><span>合同税率情况</span><strong>{{ contractChangeTerms.taxRate }}</strong></div>
                   </template>
-                  <div class="contract-change-settlement-compact"><span>付款方式</span><strong>{{ contractChangeTerms.payWay }}</strong></div>
+                  <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === 'purchase' ? '付款方式' : '回款方式' }}</span><strong>{{ contractChangeTerms.payWay }}</strong></div>
                   <template v-if="contractChangeFileMode !== 'framework'">
                     <div class="contract-change-settlement-compact"><span>{{ activeContractChangePage.data.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ contractChangeTerms.billTime }}天</strong></div>
-                    <div class="contract-change-settlement-rule"><span>货款结算</span><strong>{{ contractChangeTerms.settlement }}</strong></div>
+                    <div class="contract-change-settlement-rule"><span>{{ activeContractChangePage.data.type === 'purchase' ? '货款结算' : '回款约定' }}</span><strong>{{ contractChangeTerms.settlement }}</strong></div>
                   </template>
                 </div>
               </template>
@@ -3171,7 +3176,7 @@
                 <el-tab-pane :label="`订单（${contractChangeAffectedOrderRows.length}）`" name="order">
                   <el-table :data="contractChangeAffectedOrderRows" border size="small" empty-text="暂无受影响的订单">
                     <el-table-column prop="type" label="单据类型" width="140" />
-                    <el-table-column prop="code" label="单据编号" min-width="210"><template #default="{ row }"><el-link type="primary">{{ row.code }}</el-link></template></el-table-column>
+                    <el-table-column prop="code" label="单据编号" min-width="210"><template #default="{ row }"><el-link type="primary" :underline="false" @click="openOrderDetail(row, row.type === '采购订单' ? 'purchase' : 'sale')">{{ row.code }}</el-link></template></el-table-column>
                     <el-table-column prop="status" label="当前状态" width="130" />
                     <el-table-column prop="amount" label="单据金额" width="150" align="right" />
                   </el-table>
@@ -3422,6 +3427,10 @@
                       ><div class="contract-readonly-value">
                         {{ businessTypeDisplay(contractDraft.budget?.type) }}
                       </div></el-form-item
+                  ></el-col>
+                  <el-col :span="8"
+                    ><el-form-item label="业务标签"
+                      ><div class="business-tag-list"><el-tag v-for="tag in contractDraft.businessTags" :key="tag" type="primary" size="small" effect="light">{{ tag }}</el-tag></div></el-form-item
                   ></el-col> </el-row
               ></el-form>
             </section>
@@ -3452,8 +3461,9 @@
                     <div class="embedded-budget-basic-grid">
                       <div><span>预算单编号</span><el-link type="primary" :underline="false" @click="openBudgetFromContract">{{ contractDraft.budget?.code }}</el-link></div>
                       <div><span>预算有效期</span><strong>60 天</strong></div>
-                      <div><span>业务类型</span><strong>{{ businessTypeDisplay(contractDraft.budget?.type) }}</strong></div>
-                      <div><span>业务单元</span><strong>{{ contractDraft.businessLine }}</strong></div>
+                       <div><span>业务类型</span><strong>{{ businessTypeDisplay(contractDraft.budget?.type) }}</strong></div>
+                       <div><span>业务单元</span><strong>{{ contractDraft.businessLine }}</strong></div>
+                       <div><span>业务标签</span><strong><el-tag type="primary" size="small" effect="light">重点业务</el-tag></strong></div>
                     </div>
                   </template>
                   <div class="split-panel contract-budget-plan">
@@ -3492,10 +3502,6 @@
                                 model-value="价格及毛利测算依据预算单"
                                 type="textarea"
                                 :rows="2" /></el-form-item
-                          ></el-col>
-                          <el-col :span="24"
-                            ><el-form-item label="业务标签"
-                              ><el-tag type="primary" effect="light">重点业务</el-tag></el-form-item
                           ></el-col>
                         </el-row>
                       </el-form>
@@ -3724,7 +3730,7 @@
                   ></el-col>
                   <el-col :span="8"
                     ><el-form-item
-                          label="付款方式"
+                          :label="contractDraft.type === 'purchase' ? '付款方式' : '回款方式'"
                       ><el-select v-model="contractDraft.payWay"
                         ><el-option
                           label="货到付款"
@@ -3737,7 +3743,7 @@
                   <template v-if="contractDraft.contractMode !== 'framework' && (contractDraft.type === 'purchase' || contractDraft.contractMode === 'generated')"
                     ><el-col :span="8"
                       ><el-form-item
-                          label="货款结算"
+                          :label="contractDraft.type === 'purchase' ? '货款结算' : '回款约定'"
                         ><el-input
                           v-model="
                             contractDraft.settlement
@@ -4140,7 +4146,7 @@
                   prop="code"
                   label="订单编号"
                   min-width="170"
-                /><el-table-column
+                ><template #default="{ row }"><el-link type="primary" :underline="false" @click="openOrderDetail(row, 'purchase')">{{ row.code }}</el-link></template></el-table-column><el-table-column
                   prop="type"
                   label="订单类型"
                   width="110"
@@ -4165,13 +4171,7 @@
                   prop="created"
                   label="创建时间"
                   width="160"
-                /><el-table-column label="操作" width="90"
-                  ><template #default
-                    ><el-button link type="primary"
-                      >查看订单</el-button
-                    ></template
-                  ></el-table-column
-                ></el-table
+                /></el-table
               >
             </section>
           </div>
@@ -4416,17 +4416,17 @@
                 ><el-col :span="6"><el-form-item label="业务类型" required
                   ><div v-if="orderPageReadonly || orderDraft.entrySource === 'budget' || orderDraft.entrySource === 'contract'" class="order-readonly-value">{{ orderBusinessTypeDisplay }}</div
                   ><el-cascader v-else v-model="orderBusinessPath" :options="orderBusinessTypeCascaderOptions" :props="{ expandTrigger: 'hover' }" separator=" / " :show-all-levels="true" @change="handleOrderBusinessTypeChange" /></el-form-item></el-col
+                ><el-col :span="6"><el-form-item label="创建订单方式" required
+                  ><el-select v-model="orderDraft.creationMethod" :disabled="orderPageReadonly" placeholder="请先选择业务类型" @change="handleOrderCreationMethodChange"
+                    ><el-option v-for="item in orderCreationMethodOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.partyLabel" required
                   ><el-link v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" type="primary" :underline="false" class="order-readonly-value link-value document-field-link" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.partyName }}</el-link
-                  ><div v-else class="linked-document-control"><el-select v-model="orderDraft.partyName" :disabled="orderUsesExistingContract && orderDraft.entrySource !== 'list'" :placeholder="orderDraft.type === 'purchase' ? '请选择供应商' : '请选择客户'"><template v-if="orderDraft.type === 'sale'"><el-option label="成都星海科技有限公司" value="成都星海科技有限公司" /><el-option label="重庆恒信贸易有限公司" value="重庆恒信贸易有限公司" /><el-option label="成都启航科技有限公司" value="成都启航科技有限公司" /></template><template v-else><el-option label="四川智联商贸有限公司" value="四川智联商贸有限公司" /></template></el-select><el-button v-if="orderDraft.partyName" link type="primary" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.type === 'purchase' ? '查看供应商' : '查看客户' }}</el-button></div></el-form-item></el-col
+                  ><div v-else class="linked-document-control"><el-select v-model="orderDraft.partyName" class="party-name-select" :disabled="orderUsesExistingContract && orderDraft.entrySource !== 'list'" :placeholder="orderDraft.type === 'purchase' ? '请选择供应商' : '请选择客户'"><template #label="{ label }"><el-link type="primary" :underline="false" class="selected-party-option-link" @mousedown.stop @click.stop="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ label }}</el-link></template><template v-if="orderDraft.type === 'sale'"><el-option label="成都星海科技有限公司" value="成都星海科技有限公司" /><el-option label="重庆恒信贸易有限公司" value="重庆恒信贸易有限公司" /><el-option label="成都启航科技有限公司" value="成都启航科技有限公司" /></template><template v-else><el-option label="四川智联商贸有限公司" value="四川智联商贸有限公司" /></template></el-select></div></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.ownerLabel" required
                   ><el-link v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" type="primary" :underline="false" class="order-readonly-value link-value document-field-link" @click="openOwnerDetail(orderDraft.ownerName)">{{ orderDraft.ownerName }}</el-link
                   ><div v-else class="linked-document-control"><el-select v-model="orderDraft.ownerName" :disabled="orderUsesExistingContract && orderDraft.entrySource !== 'list'" :placeholder="orderDraft.type === 'purchase' ? '请选择责任人' : '请选择业务员'"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /><el-option label="周敏" value="周敏" /><el-option label="王芳" value="王芳" /></el-select></div></el-form-item></el-col
                 ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="采购业务员"><el-select v-model="orderDraft.purchaseSalesman" :disabled="orderPageReadonly"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /></el-select></el-form-item></el-col
                 ><el-col v-if="showOrderLaunchParty" :span="6"><el-form-item label="发起方"><el-input v-model="orderDraft.launchParty" :disabled="orderPageReadonly" /></el-form-item></el-col
-                ><el-col :span="6"><el-form-item label="创建订单方式" required
-                  ><el-select v-model="orderDraft.creationMethod" :disabled="orderPageReadonly" placeholder="请先选择业务类型" @change="handleOrderCreationMethodChange"
-                    ><el-option v-for="item in orderCreationMethodOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item></el-col
               ></el-row><div class="subsection-heading">组织与开票</div><el-row :gutter="16" class="order-field-grid"
                 ><el-col :span="6"><el-form-item label="部门"><div class="order-readonly-value">{{ orderDraft.department }}</div></el-form-item></el-col
                 ><el-col :span="6"><el-form-item label="合同签署主体"><div class="order-readonly-value">{{ orderDraft.entity }}</div></el-form-item></el-col
@@ -4435,7 +4435,7 @@
                 ><el-col :span="6"><el-form-item label="账期（天）" required
                   ><div v-if="orderPageReadonly || orderUsesExistingContract" class="order-readonly-value emphasized-day-value">{{ orderDraft.billTime }} 天</div
                   ><el-input v-else :model-value="String(orderDraft.billTime)" inputmode="numeric" maxlength="4" placeholder="请输入整数" @input="setOrderDayValue('billTime', $event)"><template #suffix>天</template></el-input></el-form-item></el-col
-                ><el-col :span="6"><el-form-item label="业务标签"><el-select v-model="orderDraft.businessTags" multiple :disabled="orderPageReadonly"><el-option label="重点业务" value="重点业务" /><el-option label="渠道业务" value="渠道业务" /></el-select></el-form-item></el-col
+                ><el-col :span="6"><el-form-item label="业务标签"><div v-if="orderPageReadonly" class="business-tag-list"><el-tag v-for="tag in orderDraft.businessTags" :key="tag" type="primary" size="small" effect="light">{{ tag }}</el-tag></div><el-select v-else v-model="orderDraft.businessTags" multiple tag-type="primary" class="business-tag-select"><el-option label="重点业务" value="重点业务" /><el-option label="渠道业务" value="渠道业务" /></el-select></el-form-item></el-col
                 ><el-col v-if="orderDraft.type === 'purchase' && orderDraft.businessType === '产品导向分销'" :span="6"><el-form-item label="华为报量"><el-switch v-model="orderDraft.huaweiReport" :disabled="orderPageReadonly" /></el-form-item></el-col
               ></el-row></el-form>
             <div class="subsection-heading order-attachment-subsection-heading">附件与说明</div>
@@ -4458,7 +4458,7 @@
                     ><el-link v-if="(orderPageReadonly || orderDraft.entrySource === 'budget' || orderDraft.entrySource === 'contract') && orderDraft.budgetCode" :underline="false" class="order-readonly-value link-value document-field-link" @click="openOrderBudgetDetail">{{ orderDraft.budgetCode }}</el-link><div v-else class="linked-document-control"><el-select v-model="orderDraft.budgetCode" filterable clearable placeholder="请选择预算单编号"><el-option v-for="item in budgets" :key="item.code" :label="item.code" :value="item.code" /></el-select><el-button v-if="orderDraft.budgetCode" link type="primary" @click="openOrderBudgetDetail">查看</el-button></div></el-form-item></el-col
                 ><el-col v-if="showOrderContract" :span="6"><el-form-item label="关联合同" required
                     ><el-link v-if="(orderPageReadonly || orderDraft.entrySource !== 'list') && orderDraft.contractCode" type="primary" :underline="false" class="order-readonly-value link-value document-field-link" @click="openOrderContractDetail">{{ orderDraft.contractCode }}</el-link><el-input v-else v-model="orderDraft.contractCode" placeholder="请输入或选择已生效合同" class="linked-document-input"><template #suffix><el-link v-if="orderDraft.contractCode" type="primary" @click="openOrderContractDetail">查看</el-link></template></el-input></el-form-item></el-col
-                ><el-col v-if="showProjectFollowup" :span="6"><el-form-item label="是否属于项目后运行单"><el-switch v-model="orderDraft.projectFollowup" :disabled="orderPageReadonly" /></el-form-item></el-col
+                ><el-col v-if="showProjectFollowup" :span="6"><el-form-item label="是否属于项目后返行单"><el-switch v-model="orderDraft.projectFollowup" :disabled="orderPageReadonly" /></el-form-item></el-col
                 ><el-col v-if="showCapitalOccupied" :span="6"><el-form-item label="是否占用资金" required><el-switch v-model="orderDraft.capitalOccupied" :disabled="orderPageReadonly" /></el-form-item></el-col
                 ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="供应商订单号"><div class="supplier-order-code-summary"><span>{{ orderDraft.supplierOrderCodes[0] || '暂未录入' }}</span><small v-if="orderDraft.supplierOrderCodes.length > 1">共{{ orderDraft.supplierOrderCodes.length }}条</small><el-button link type="primary" @click="openSupplierOrderCodes">{{ orderPageReadonly ? '查看全部' : '修改' }}</el-button></div></el-form-item></el-col
               ></el-row
@@ -5749,6 +5749,7 @@ const contractDraft = reactive({
   contractCode: "",
   responsible: "张晨",
   businessLine: "西南业务部",
+  businessTags: ["重点业务"],
   billTime: 30,
   paymentDate: "2026-09-20",
   frameworkCode: "",
@@ -6281,13 +6282,12 @@ const businessTypeConfigs = {
         required: true,
       },
       { key: "profitBackfill", label: "项目单毛利回补总额", kind: "number" },
-      { key: "robotOrder", label: "是否由机器人下单", kind: "switch" },
     ],
   },
   订单导向分销: {
     description: "以明确订单需求为来源，突出订单关联关系",
     fields: [
-      { key: "projectRebate", label: "是否属于项目后返订单", kind: "switch" },
+      { key: "projectRebate", label: "是否属于项目后返行单", kind: "switch" },
     ],
   },
   FA囤货: {
@@ -6368,6 +6368,10 @@ const isSalesBudgetType = computed(() =>
   ["订单导向分销", "FA以销定采", "FA-以销定采", "项目A", "项目B", "A类", "B类"].includes(form.type),
 );
 const isStockBudgetType = computed(() => !isSalesBudgetType.value);
+const robotOrderSuppliers = ["大联想伙伴网", "联想", "追觅", "翰林汇"];
+const isRobotOrderSupplier = computed(
+  () => form.type === "产品导向分销" && robotOrderSuppliers.includes(form.supplier),
+);
 const budgetRobotFields = computed(() => {
   if (form.type !== "产品导向分销" || !form.dynamic.robotOrder) return [];
   if (["大联想伙伴网", "联想"].includes(form.supplier)) {
@@ -6379,6 +6383,12 @@ const budgetRobotFields = computed(() => {
   }
   return [];
 });
+watch(
+  [() => form.type, () => form.supplier],
+  () => {
+    if (!isRobotOrderSupplier.value) form.dynamic.robotOrder = false;
+  },
+);
 const canonicalBudgetGoodsType = computed(
   () =>
     ({
@@ -7611,6 +7621,13 @@ function openContractManagementRow(row, pageMode = "detail") {
     });
   }
   openContractPage(pageMode, row.type, row);
+}
+function openLinkedOrderByContract(row) {
+  if (!row?.orderCode || row.orderCode === "-") return;
+  openOrderDetail(
+    { ...row, code: row.orderCode },
+    row.type === "purchase" ? "purchase" : "sale",
+  );
 }
 function openContractPage(pageMode, type, row = null) {
   const budget =
@@ -10286,6 +10303,42 @@ onMounted(() => {
 .type-fields {
   margin-top: 2px;
   padding-top: 4px;
+}
+.robot-order-trigger-tip {
+  margin-top: 5px;
+  color: #7d8b99;
+  font-size: 12px;
+  line-height: 18px;
+}
+.supplier-robot-panel {
+  margin-top: 12px;
+  padding: 14px 16px 2px;
+  border: 1px solid #dce8f5;
+  border-radius: 6px;
+  background: #f8fbff;
+}
+.supplier-robot-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5edf6;
+  > div {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  strong {
+    color: #31465b;
+    font-size: 14px;
+  }
+  span {
+    color: #7d8b99;
+    font-size: 12px;
+  }
 }
 .split-panel {
   display: grid;
@@ -13845,6 +13898,16 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
 }
+.selected-party-option-link {
+  max-width: 100%;
+  justify-content: flex-start;
+  :deep(.el-link__inner) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 .order-contract-form .contract-mode-cards {
   width: 100%;
   display: grid;
@@ -15094,6 +15157,17 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 500;
   line-height: 20px;
+}
+.business-tag-list {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.business-tag-select :deep(.el-tag) {
+  --el-tag-bg-color: var(--el-color-primary-light-9);
+  --el-tag-border-color: var(--el-color-primary-light-7);
+  --el-tag-text-color: var(--el-color-primary);
 }
 .contract-edit-page
   .contract-block
