@@ -1145,6 +1145,7 @@
                     ><div class="contract-readonly-value">{{ contractModeLabel(activeContractPage.data.contractMode) }}</div></el-form-item></el-col
                 ><template
                   v-if="activeContractPage.data.contractMode === 'framework'"
+                  ><el-col :span="24" class="contract-field-group-title">合同文件</el-col
                   ><el-col :span="8"
                     ><el-form-item label="框架协议编号"
                       ><div class="contract-readonly-value">{{ activeContractPage.data.frameworkCode || 'KJXY-2026-0086' }}</div></el-form-item></el-col
@@ -1223,7 +1224,8 @@
                     ></el-row></el-form></el-collapse-item
             ></el-collapse>
           <section class="contract-file-detail-section contract-nested-files">
-            <h4 class="contract-content-subtitle">{{ activeContractPage.data.contractMode === 'framework' ? '订单证明文件' : '合同文件' }}</h4>
+            <h4 v-if="activeContractPage.data.contractMode !== 'framework'" class="contract-content-subtitle">合同文件</h4>
+            <div v-else class="contract-file-tertiary-label">订单证明文件</div>
             <div
               v-if="activeContractPage.data.status === '审批中'"
               class="contract-local-status"
@@ -1300,12 +1302,14 @@
                 label="对方已用印"
                 width="105"
             /></el-table>
-            <div class="contract-field-group-title">其他</div>
-            <el-form label-position="top"><el-form-item label="备注"><div class="contract-readonly-value">以最终用印文件为准</div></el-form-item></el-form>
-            <div v-if="activeContractPage.data.contractMode !== 'framework'" class="contract-supporting-files">
-              <div class="supporting-file-heading"><strong>其他附件</strong></div>
-              <div v-if="contractDetailOtherFiles.length" class="supporting-file-list"><div v-for="file in contractDetailOtherFiles" :key="file.name" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.size }}</small><el-button link type="primary" @click="previewContractFile(file)">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div>
-              <div v-else class="supporting-file-empty">暂无其他附件</div>
+            <div class="contract-other-module">
+              <div class="contract-field-group-title">其他</div>
+              <el-form label-position="top"><el-form-item label="备注"><div class="contract-readonly-value">以最终用印文件为准</div></el-form-item></el-form>
+              <div v-if="activeContractPage.data.contractMode !== 'framework'" class="contract-supporting-files">
+                <div class="supporting-file-heading"><strong>其他附件</strong></div>
+                <div v-if="contractDetailOtherFiles.length" class="supporting-file-list"><div v-for="file in contractDetailOtherFiles" :key="file.name" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.size }}</small><el-button link type="primary" @click="previewContractFile(file)">预览</el-button><el-button link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button></div></div>
+                <div v-else class="supporting-file-empty">暂无其他附件</div>
+              </div>
             </div>
           </section>
           </article>
@@ -3664,6 +3668,12 @@
                   >
                   <el-col
                     v-if="contractDraft.contractMode === 'framework'"
+                    :span="24"
+                    class="contract-field-group-title"
+                    >合同文件</el-col
+                  >
+                  <el-col
+                    v-if="contractDraft.contractMode === 'framework'"
                     :span="8"
                     ><el-form-item label="框架协议编号"
                       ><div class="framework-agreement-selector" @click="openFrameworkAgreementDialog">
@@ -3779,12 +3789,15 @@
               ></el-form>
               <div
                 v-if="contractDraft.contractMode === 'generated'"
-                class="generate-contract-action contract-info-generate-action"
+                class="contract-operation-module"
               >
-                <div class="contract-generate-field-label">合同文件生成</div>
-                <div class="contract-generate-field-content">
-                  <el-button type="primary" @click="generateContractFile">{{ contractWorkingFiles.some(file => file.source === 'generated') ? "重新生成合同" : "生成合同" }}</el-button>
-                  <span>根据以上合同信息生成模板文件，并自动加入合同文件列表</span>
+                <div class="contract-field-group-title">合同文件</div>
+                <div class="generate-contract-action contract-info-generate-action">
+                  <div class="contract-generate-field-label">合同文件生成</div>
+                  <div class="contract-generate-field-content">
+                    <el-button type="primary" @click="generateContractFile">{{ contractWorkingFiles.some(file => file.source === 'generated') ? "重新生成合同" : "生成合同" }}</el-button>
+                    <span>根据以上合同信息生成模板文件，并自动加入合同文件列表</span>
+                  </div>
                 </div>
               </div>
             </section>
@@ -3793,7 +3806,8 @@
               class="contract-block contract-files-block"
             >
               <div class="contract-file-section-heading">
-                <h4 class="contract-content-subtitle">{{ contractDraft.contractMode === "framework" ? "订单证明文件" : "合同文件" }}</h4>
+                <h4 v-if="contractDraft.contractMode === 'upload'" class="contract-content-subtitle">合同文件</h4>
+                <div v-if="contractDraft.contractMode === 'framework'" class="contract-file-tertiary-label">订单证明文件</div>
               </div>
               <el-form
                 v-if="contractDraft.contractMode === 'upload'"
@@ -3927,13 +3941,15 @@
                   ></el-table-column
                 >
               </el-table>
-              <div class="contract-field-group-title">其他</div>
-              <el-form label-position="top"><el-form-item label="备注"><el-input v-if="contractDraft.type === 'purchase'" v-model="contractDraft.remark" type="textarea" :rows="3" maxlength="500" show-word-limit resize="none" placeholder="请输入备注（选填）" /><el-input v-else v-model="contractDraft.remark" placeholder="请输入备注（选填）" /></el-form-item></el-form>
-              <div v-if="contractDraft.contractMode !== 'framework'" class="contract-supporting-files">
-                <div class="supporting-file-heading"><strong>其他附件</strong></div>
-                <div class="supporting-file-upload-row"><el-upload action="#" :auto-upload="false" :show-file-list="false" :limit="10" :on-change="handleContractOtherAttachmentUpload"><el-button class="compact-upload-trigger" type="primary" link :icon="Upload">上传其他附件</el-button></el-upload><span>上限10个，最大100MB/个</span></div>
-                <div v-if="contractOtherFiles.length" class="supporting-file-list"><div v-for="file in contractOtherFiles" :key="file.uid || file.name" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.size }}</small><el-button link type="primary" @click="previewContractFile(file)">预览</el-button><el-button link type="danger" @click="removeContractOtherFile(file)">删除</el-button></div></div>
-                <div v-else class="supporting-file-empty">暂未上传其他附件</div>
+              <div class="contract-other-module">
+                <div class="contract-field-group-title">其他</div>
+                <el-form label-position="top"><el-form-item label="备注"><el-input v-if="contractDraft.type === 'purchase'" v-model="contractDraft.remark" type="textarea" :rows="3" maxlength="500" show-word-limit resize="none" placeholder="请输入备注（选填）" /><el-input v-else v-model="contractDraft.remark" placeholder="请输入备注（选填）" /></el-form-item></el-form>
+                <div v-if="contractDraft.contractMode !== 'framework'" class="contract-supporting-files">
+                  <div class="supporting-file-heading"><strong>其他附件</strong></div>
+                  <div class="supporting-file-upload-row"><el-upload action="#" :auto-upload="false" :show-file-list="false" :limit="10" :on-change="handleContractOtherAttachmentUpload"><el-button class="compact-upload-trigger" type="primary" link :icon="Upload">上传其他附件</el-button></el-upload><span>上限10个，最大100MB/个</span></div>
+                  <div v-if="contractOtherFiles.length" class="supporting-file-list"><div v-for="file in contractOtherFiles" :key="file.uid || file.name" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.size }}</small><el-button link type="primary" @click="previewContractFile(file)">预览</el-button><el-button link type="danger" @click="removeContractOtherFile(file)">删除</el-button></div></div>
+                  <div v-else class="supporting-file-empty">暂未上传其他附件</div>
+                </div>
               </div>
             </section>
             </section>
@@ -4261,8 +4277,15 @@
               <span>{{ orderDraft.partyLabel }}：<el-link type="primary" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.partyName || '—' }}</el-link></span>
               <span>{{ orderDraft.ownerLabel }}：<el-link type="primary" :underline="false" @click="openOwnerDetail(orderDraft.ownerName)">{{ orderDraft.ownerName || '—' }}</el-link></span>
               <span>创建订单方式：{{ orderCreationMethodDisplay }}</span>
+              <span v-if="orderDraft.type === 'purchase'">单据来源：{{ orderDraft.documentSource || '—' }}</span>
+              <span v-if="orderDraft.type === 'purchase'">制单人：{{ orderDraft.creator || activeOrderPage.data.creator || '—' }}</span>
               <span>制单时间：{{ activeOrderPage.data.created || activeOrderPage.data.submittedAt || '—' }}</span>
               <span v-if="!(orderDraft.type === 'purchase' && activeOrderPage.orderPageMode === 'detail')">最后更新：{{ activeOrderPage.data.updated || activeOrderPage.data.submittedAt || activeOrderPage.data.created || '—' }}</span>
+            </p>
+            <p v-else-if="activeOrderPage.orderPageMode === 'edit' && orderDraft.type === 'purchase'" class="document-meta order-detail-meta">
+              <span>单据来源：{{ orderDraft.documentSource || '—' }}</span>
+              <span>制单人：{{ orderDraft.creator || '—' }}</span>
+              <span>制单时间：{{ activeOrderPage.data.created || orderDraft.createdAt || '—' }}</span>
             </p>
             <p v-else>
               {{
@@ -4272,19 +4295,13 @@
               }}
             </p>
             <div v-if="activeOrderPage.orderPageMode === 'audit'" class="contract-approval-metrics">
-              <div><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
+              <div><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
               <div class="contract-term-metric"><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ orderDraft.billTime ?? '—' }}</b><small v-if="orderDraft.billTime !== null && orderDraft.billTime !== undefined && orderDraft.billTime !== ''">天</small></strong></div>
-              <div><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></div>
-              <div v-if="!orderDraft.budgetCode"><span>发票类型</span><strong>{{ orderDraft.invoiceType || '—' }}</strong></div>
-              <template v-else><div><span>预算单毛利</span><strong>¥61,900.00</strong></div><div><span>预算单毛利率</span><strong :class="{ 'margin-rate-abnormal': isBudgetMarginRateAbnormal('17.39%') }">17.39%</strong><small v-if="isBudgetMarginRateAbnormal('17.39%')" class="margin-warning-tag">低于15%</small></div></template>
             </div>
           </div>
           <div v-if="activeOrderPage.orderPageMode === 'detail'" class="contract-detail-header-metrics">
-            <div><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
+            <div><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
             <div class="contract-term-metric"><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ orderDraft.billTime ?? '—' }}</b><small v-if="orderDraft.billTime !== null && orderDraft.billTime !== undefined && orderDraft.billTime !== ''">天</small></strong></div>
-            <div class="summary-plain-attribute"><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></div>
-            <div v-if="!orderDraft.budgetCode"><span>发票类型</span><strong>{{ orderDraft.invoiceType || '—' }}</strong></div>
-            <template v-else><div><span>预算单毛利</span><strong>¥61,900.00</strong></div><div><span>预算单毛利率</span><strong :class="{ 'margin-rate-abnormal': isBudgetMarginRateAbnormal('17.39%') }">17.39%</strong><small v-if="isBudgetMarginRateAbnormal('17.39%')" class="margin-warning-tag">低于15%</small></div></template>
           </div>
         </header>
         <div class="approval-page-main">
@@ -4302,6 +4319,8 @@
                 ><el-col :span="6"><el-form-item label="创建订单方式" required
                   ><el-select v-model="orderDraft.creationMethod" :disabled="orderPageReadonly" placeholder="请先选择业务类型" @change="handleOrderCreationMethodChange"
                     ><el-option v-for="item in orderCreationMethodOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item></el-col
+                ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="单据来源"
+                  ><div class="order-readonly-value">{{ orderDraft.documentSource || '—' }}</div></el-form-item></el-col
                 ><el-col :span="6"><el-form-item label="业务标签"><div v-if="orderPageReadonly" class="business-tag-list"><el-tag v-for="tag in orderDraft.businessTags" :key="tag" type="primary" size="small" effect="light">{{ tag }}</el-tag></div><el-select v-else v-model="orderDraft.businessTags" multiple tag-type="primary" class="business-tag-select"><el-option label="重点业务" value="重点业务" /><el-option label="渠道业务" value="渠道业务" /></el-select></el-form-item></el-col
                 ><el-col :span="6"><el-form-item :label="orderDraft.partyLabel" required
                   ><el-link v-if="orderDraft.entrySource !== 'list' || orderPageReadonly" type="primary" :underline="false" class="order-readonly-value link-value document-field-link" @click="openSupplierDetail(orderDraft.partyName, orderDraft.type === 'purchase' ? 'supplier' : 'customer')">{{ orderDraft.partyName }}</el-link
@@ -4402,6 +4421,7 @@
             <el-form label-position="top" class="order-contract-form" :disabled="orderPageReadonly">
               <div class="contract-field-group-title">合同情况</div>
               <el-form-item label="合同情况" required class="contract-mode-form-item"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ contractModeLabel(orderDraft.contractSituation) }}</div><el-radio-group v-else v-model="orderDraft.contractSituation" class="contract-mode-cards"><el-radio label="generated"><strong>系统生成合同</strong><span>填写合同条款后，由系统生成合同文件</span></el-radio><el-radio label="upload"><strong>上传合同</strong><span>填写合同编号并上传已有合同文件</span></el-radio><el-radio label="framework"><strong>适用框架协议</strong><span>选择框架协议，仅上传订单证明文件</span></el-radio></el-radio-group></el-form-item>
+              <div v-if="orderDraft.contractSituation === 'framework'" class="contract-field-group-title">合同文件</div>
               <el-row v-if="orderDraft.contractSituation === 'framework'" :gutter="16">
                 <el-col :span="8"><el-form-item label="框架协议编号"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.frameworkCode || '—' }}</div><el-select v-else v-model="orderDraft.frameworkCode"><el-option label="KJXY-2026-0086" value="KJXY-2026-0086" /><el-option label="KJXY-2026-0092" value="KJXY-2026-0092" /></el-select></el-form-item></el-col>
                 <el-col :span="8"><el-form-item label="框架协议附件"><el-link type="primary">框架协议正文-KJXY-2026-0086.pdf</el-link></el-form-item></el-col>
@@ -4427,8 +4447,9 @@
                 <el-col :span="8"><el-form-item label="审批后自动用印"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.autoSeal ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.autoSeal" /></el-form-item></el-col>
                 <el-col :span="8"><el-form-item label="是否需要邮寄"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.needMail ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.needMail" /></el-form-item></el-col>
                 <el-col :span="8"><el-form-item label="收件人信息"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.receiveInfo || '—' }}</div><el-input v-else v-model="orderDraft.receiveInfo" :disabled="!orderDraft.needMail" /></el-form-item></el-col>
-                <el-col :span="24"><el-form-item label="备注"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.contractRemark || '—' }}</div><el-input v-else v-model="orderDraft.contractRemark" type="textarea" :rows="2" /></el-form-item></el-col>
               </el-row>
+              <div class="contract-field-group-title">其他</div>
+              <el-form-item label="备注"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.contractRemark || '—' }}</div><el-input v-else v-model="orderDraft.contractRemark" type="textarea" :rows="2" /></el-form-item>
             </el-form>
           </article>
           <article id="order-delivery" class="section-card">
@@ -4619,12 +4640,12 @@
           <section v-if="activeOrderPage.orderPageMode !== 'detail'" v-show="!orderWorkbenchCollapsed" class="order-overview-card">
             <div><b>{{ activeOrderPage.orderPageMode === 'create' ? '关键指标' : '订单概览' }}</b><small>实时计算</small></div>
             <template v-if="activeOrderPage.orderPageMode === 'create'">
-              <p><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
+              <p><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
               <p><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ orderDraft.billTime }}天</strong></p>
               <p><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></p>
             </template>
             <template v-else>
-              <p><span>订单金额</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
+              <p><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
               <p><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong>{{ orderDraft.billTime }}天</strong></p>
               <p><span>付款方式</span><strong>{{ orderDraft.paymentMethod || '—' }}</strong></p>
             </template>
@@ -4983,6 +5004,9 @@ const purchaseOrderRows = ref([
     entity: "四川科瑞供应链管理有限公司",
     supplier: "成都星海科技有限公司",
     purchaseOwner: "张晨",
+    documentSource: "线下",
+    creator: "张晨",
+    created: "2026-08-20 14:30",
     saleOwner: "李然",
     billTime: 30,
     contractCode: "CGHT-202608-00192",
@@ -5004,6 +5028,9 @@ const purchaseOrderRows = ref([
     entity: "四川科瑞供应链管理有限公司",
     supplier: "四川智联商贸有限公司",
     purchaseOwner: "周敏",
+    documentSource: "线上",
+    creator: "周敏",
+    created: "2026-08-18 10:15",
     saleOwner: "周敏",
     billTime: 45,
     contractCode: "CGHT-202608-00186",
@@ -5025,6 +5052,9 @@ const purchaseOrderRows = ref([
     entity: "四川科瑞供应链管理有限公司",
     supplier: "成都云帆数码有限公司",
     purchaseOwner: "李然",
+    documentSource: "线下",
+    creator: "李然",
+    created: "2026-08-12 09:40",
     saleOwner: "张晨",
     billTime: 0,
     contractCode: "-",
@@ -5884,6 +5914,9 @@ const orderDraft = reactive({
   entrySource: "list",
   businessType: "产品导向分销",
   creationMethod: "contract",
+  documentSource: "线下",
+  creator: "当前用户",
+  createdAt: "—",
   budgetCode: "",
   contractCode: "",
   partyLabel: "客户",
@@ -7990,6 +8023,9 @@ function openOrderDraft(row, type) {
   orderDraft.type = type;
   orderDraft.typeLabel = type === "purchase" ? "采购订单" : "销售订单";
   orderDraft.entrySource = "budget";
+  orderDraft.documentSource = "线下";
+  orderDraft.creator = "当前用户";
+  orderDraft.createdAt = "—";
   orderDraft.businessType = normalizeOrderBusinessType(row.type);
   if (type === "purchase") {
     orderDraft.creationMethod = "contract";
@@ -8042,6 +8078,9 @@ function openManualOrder(type) {
     entrySource: "list",
     businessType: "订单导向分销",
     creationMethod: "contract",
+    documentSource: "线下",
+    creator: "当前用户",
+    createdAt: "—",
     budgetCode: "",
     contractCode: "",
     partyLabel: type === "purchase" ? "供应商" : "客户",
@@ -8196,6 +8235,9 @@ function openOrderDetail(row, type) {
     entrySource: row.contractCode && row.contractCode !== "-" ? "contract" : "list",
     businessType,
     creationMethod: row.contractCode && row.contractCode !== "-" ? "contract" : "no_contract",
+    documentSource: row.documentSource || "线下",
+    creator: row.creator || row.purchaseOwner || row.salesman || "—",
+    createdAt: row.created || "—",
     budgetCode: row.budgetCode === "-" ? "" : row.budgetCode,
     contractCode: row.contractCode === "-" ? "" : row.contractCode,
     partyLabel: type === "purchase" ? "供应商" : "客户",
@@ -8247,6 +8289,9 @@ function openOrderApproval(row, type) {
     entrySource: "contract",
     businessType: "订单导向分销",
     creationMethod: "contract",
+    documentSource: row.documentSource || "线下",
+    creator: row.creator || row.applicant || "—",
+    createdAt: row.created || row.submittedAt || "—",
     budgetCode: "YSGL-202608-02660",
     contractCode: type === "purchase" ? "CGHT-202608-00192" : "XSHT-202608-00018",
     partyLabel: type === "purchase" ? "供应商" : "客户",
@@ -13099,6 +13144,25 @@ onMounted(() => {
 .goods-name-with-warning { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
 .low-flow-warning-icon { flex: none; color: #d48806; font-size: 14px; line-height: 1; }
 .contract-supporting-files { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8edf3; }
+.contract-other-module {
+  margin-top: 16px;
+  padding-top: 4px;
+  border-top: 1px solid #e8edf3;
+}
+.contract-other-module > .contract-field-group-title {
+  margin-top: 0;
+}
+.contract-file-tertiary-label {
+  margin: 4px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf1f5;
+  color: #44515f;
+  font-size: 14px;
+  font-weight: 600;
+}
+.contract-operation-module {
+  margin-top: 12px;
+}
 .supporting-file-heading { display: flex; align-items: center; min-height: 24px; }
 .supporting-file-heading strong { display: block; margin: 0; color: #44515f; font-size: 13px; }
 .supporting-file-heading span { color: #8a97a5; font-size: 12px; }
