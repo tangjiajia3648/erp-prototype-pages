@@ -4294,14 +4294,6 @@
                   : "先选择业务类型，系统将自动匹配可用的创建方式和关联单据"
               }}
             </p>
-            <div v-if="activeOrderPage.orderPageMode === 'audit'" class="contract-approval-metrics">
-              <div><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
-              <div class="contract-term-metric"><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ orderDraft.billTime ?? '—' }}</b><small v-if="orderDraft.billTime !== null && orderDraft.billTime !== undefined && orderDraft.billTime !== ''">天</small></strong></div>
-            </div>
-          </div>
-          <div v-if="activeOrderPage.orderPageMode === 'detail'" class="contract-detail-header-metrics">
-            <div><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></div>
-            <div class="contract-term-metric"><span>{{ orderDraft.type === 'purchase' ? '采购账期' : '销售账期' }}</span><strong class="contract-term-chip"><b>{{ orderDraft.billTime ?? '—' }}</b><small v-if="orderDraft.billTime !== null && orderDraft.billTime !== undefined && orderDraft.billTime !== ''">天</small></strong></div>
           </div>
         </header>
         <div class="approval-page-main">
@@ -4637,7 +4629,7 @@
             <span>{{ orderWorkbenchCollapsed ? '‹' : '›' }}</span><em v-if="orderWorkbenchCollapsed">{{ orderDraft.type === 'sale' ? 3 : 2 }}</em>
           </button>
           <div class="contract-side-scroll">
-          <section v-if="activeOrderPage.orderPageMode !== 'detail'" v-show="!orderWorkbenchCollapsed" class="order-overview-card">
+          <section v-if="!orderPageReadonly" v-show="!orderWorkbenchCollapsed" class="order-overview-card">
             <div><b>{{ activeOrderPage.orderPageMode === 'create' ? '关键指标' : '订单概览' }}</b><small>实时计算</small></div>
             <template v-if="activeOrderPage.orderPageMode === 'create'">
               <p><span>{{ orderDraft.type === 'purchase' ? '合计金额' : '订单金额' }}</span><strong>¥{{ orderTotalAmount.toLocaleString() }}</strong></p>
@@ -15689,6 +15681,34 @@ onMounted(() => {
 .document-page.order-detail-page.workbench-collapsed {
   grid-template-columns: minmax(0, 1fr) 40px;
 }
+.document-page.budget-approval-view > .document-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+}
+.document-page.budget-approval-view > .document-layout:has(> .flow-module-control.collapsed) {
+  grid-template-columns: minmax(0, 1fr) 48px;
+}
+.document-page.budget-approval-view > .document-layout > .approval-page-main {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.document-page.budget-approval-view > .document-layout > .flow-module-control {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  inset: auto;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  flex: none;
+}
+.document-page.budget-approval-view > .document-layout > .flow-module-control.collapsed {
+  width: auto;
+}
 .budget-readonly-page > .document-header,
 .contract-detail-page > .document-header,
 .order-detail-page > .document-header,
@@ -16099,6 +16119,12 @@ onMounted(() => {
   pointer-events: auto;
 }
 @media (max-width: 1180px) {
+  .document-page.budget-approval-view > .document-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .document-page.budget-approval-view > .document-layout > .flow-module-control {
+    display: none;
+  }
   .document-page.order-audit-page,
   .document-page.order-audit-page.workbench-collapsed,
   .document-page.order-detail-page,
@@ -16113,10 +16139,16 @@ onMounted(() => {
   .document-page:has(.approval-operation-dock) .order-document-scroll { padding-bottom: 0; }
 }
 @media (min-width: 1181px) and (max-width: 1440px) {
+  .document-page.budget-approval-view > .document-layout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
   .document-page.order-audit-page,
   .document-page.order-detail-page { grid-template-columns: minmax(0, 1fr) 260px; }
 }
 @media (min-width: 1181px) and (max-width: 1280px) {
+  .document-page.budget-approval-view > .document-layout {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
   .document-page.order-audit-page,
   .document-page.order-detail-page { grid-template-columns: minmax(0, 1fr) 220px; }
 }
