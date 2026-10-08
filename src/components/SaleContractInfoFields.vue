@@ -2,7 +2,7 @@
   <el-row :gutter="16" class="shared-contract-field-grid">
     <template v-if="section === 'settlement'">
       <template v-if="readonly">
-        <el-col :span="24"><el-form-item label="货款结算"><div class="readonly-contract-value settlement-clause">{{ settlementDescription }}</div></el-form-item></el-col>
+        <el-col :span="24"><el-form-item label="货款结算"><div class="readonly-contract-value settlement-clause"><strong>{{ settlementTrigger }}</strong>后<strong>{{ billTime }}日</strong>内，甲方通过<strong>{{ settlementPaymentMethod }}</strong>方式支付合同货款<strong>{{ settlementPercent }}%</strong>，支付金额<strong>{{ settlementAmount }}</strong></div></el-form-item></el-col>
       </template>
       <template v-else>
         <el-col :span="24"><el-form-item label="货款结算"><div class="editable-settlement-clause">
@@ -15,18 +15,18 @@
     </template>
     <template v-else>
       <template v-if="readonly">
-        <el-col :span="8"><el-form-item label="签约地点"><div class="readonly-contract-value">{{ displayValue(signingLocation) }}</div></el-form-item></el-col>
-        <el-col :span="16"><el-form-item label="交付"><div class="readonly-contract-value settlement-clause">{{ deliveryDescription }}</div></el-form-item></el-col>
-        <el-col :span="24"><el-form-item label="技术支持及服务"><div class="readonly-contract-value settlement-clause">{{ technicalServiceDescription }}</div></el-form-item></el-col>
-        <el-col :span="24"><el-form-item label="发票"><div class="readonly-contract-value settlement-clause">{{ invoiceDescription }}</div></el-form-item></el-col>
+        <el-col :span="6" class="readonly-responsive-col"><el-form-item label="签约地点"><div class="readonly-contract-value">{{ displayValue(signingLocation) }}</div></el-form-item></el-col>
+        <el-col :span="12" class="readonly-responsive-col contract-wide-field"><el-form-item label="交付"><div class="readonly-contract-value settlement-clause"><strong>{{ deliveryTrigger }}</strong>后<strong>{{ deliveryDays }}日</strong>内完成交付；其他交付要求：<strong>{{ deliveryRequirement || '无' }}</strong></div></el-form-item></el-col>
+        <el-col :span="12" class="readonly-responsive-col contract-wide-field"><el-form-item label="技术支持及服务"><div class="readonly-contract-value settlement-clause">乙方<strong>{{ installationRequired }}</strong>提供安装调试，安装调试由<strong>{{ installationProvider }}</strong>提供；质保与售后由<strong>{{ warrantyProvider }}</strong>提供，质保时间与条件：<strong>{{ warrantyTerms || '无' }}</strong>；其他技术服务要求：<strong>{{ technicalServiceRemark || '无' }}</strong></div></el-form-item></el-col>
+        <el-col :span="12" class="readonly-responsive-col contract-wide-field"><el-form-item label="发票"><div class="readonly-contract-value settlement-clause"><strong>{{ invoiceTrigger }}</strong>后<strong>{{ invoiceDays }}日</strong>内，乙方向甲方开具<strong>{{ invoiceTypeLabel }}</strong></div></el-form-item></el-col>
       </template>
       <template v-else>
-        <el-col :span="8"><el-form-item label="签约地点"><el-input v-model="signingLocation" /></el-form-item></el-col>
-        <el-col :span="16"><el-form-item label="交付"><div class="editable-complex-clause"><el-select v-model="deliveryTrigger" class="delivery-trigger"><el-option label="合同生效" value="合同生效" /><el-option label="收到全款" value="收到全款" /><el-option label="收到订单" value="收到订单" /></el-select><span>后</span><el-input-number v-model="deliveryDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内完成交付</span></div></el-form-item></el-col>
-        <el-col :span="24"><el-form-item label="其他交付要求"><el-input v-model="deliveryRequirement" type="textarea" :rows="2" maxlength="300" show-word-limit resize="none" /></el-form-item></el-col>
-        <el-col :span="24"><el-form-item label="技术支持及服务"><div class="editable-complex-clause"><span>乙方</span><el-select v-model="installationRequired" class="clause-method"><el-option label="需要" value="需要" /><el-option label="不需要" value="不需要" /></el-select><span>提供安装调试，安装调试由</span><el-select v-model="installationProvider" class="clause-method"><el-option label="乙方" value="乙方" /><el-option label="厂商" value="厂商" /><el-option label="第三方" value="第三方" /></el-select><span>提供；质保与售后由</span><el-select v-model="warrantyProvider" class="clause-method"><el-option label="厂商" value="厂商" /><el-option label="乙方" value="乙方" /><el-option label="第三方" value="第三方" /></el-select><span>提供，质保时间与条件</span><el-input v-model="warrantyTerms" class="clause-wide-text" /></div></el-form-item></el-col>
-        <el-col :span="24"><el-form-item label="其他技术服务要求"><el-input v-model="technicalServiceRemark" type="textarea" :rows="2" maxlength="300" show-word-limit resize="none" /></el-form-item></el-col>
-        <el-col :span="24"><el-form-item label="发票"><div class="editable-complex-clause"><el-select v-model="invoiceTrigger" class="invoice-trigger"><el-option label="甲方支付全款" value="甲方支付全款" /><el-option label="乙方完成交付" value="乙方完成交付" /><el-option label="双方完成对账" value="双方完成对账" /></el-select><span>后</span><el-input-number v-model="invoiceDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内，乙方向甲方开具</span><el-select v-model="invoiceType" class="invoice-type"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></div></el-form-item></el-col>
+        <el-col :span="6"><el-form-item label="签约地点"><el-input v-model="signingLocation" /></el-form-item></el-col>
+        <el-col :span="12" class="contract-wide-field"><el-form-item label="交付"><div class="editable-complex-clause"><el-select v-model="deliveryTrigger" class="delivery-trigger"><el-option label="合同生效" value="合同生效" /><el-option label="收到全款" value="收到全款" /><el-option label="收到订单" value="收到订单" /></el-select><span>后</span><el-input-number v-model="deliveryDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内完成交付</span></div></el-form-item></el-col>
+        <el-col :span="12" class="contract-wide-field"><el-form-item label="其他交付要求"><el-input v-model="deliveryRequirement" type="textarea" :rows="2" maxlength="300" show-word-limit resize="none" /></el-form-item></el-col>
+        <el-col :span="24" class="contract-full-field"><el-form-item label="技术支持及服务"><div class="editable-complex-clause"><span>乙方</span><el-select v-model="installationRequired" class="clause-method"><el-option label="需要" value="需要" /><el-option label="不需要" value="不需要" /></el-select><span>提供安装调试，安装调试由</span><el-select v-model="installationProvider" class="clause-method"><el-option label="乙方" value="乙方" /><el-option label="厂商" value="厂商" /><el-option label="第三方" value="第三方" /></el-select><span>提供；质保与售后由</span><el-select v-model="warrantyProvider" class="clause-method"><el-option label="厂商" value="厂商" /><el-option label="乙方" value="乙方" /><el-option label="第三方" value="第三方" /></el-select><span>提供，质保时间与条件</span><el-input v-model="warrantyTerms" class="clause-wide-text" /></div></el-form-item></el-col>
+        <el-col :span="12" class="contract-wide-field"><el-form-item label="其他技术服务要求"><el-input v-model="technicalServiceRemark" type="textarea" :rows="2" maxlength="300" show-word-limit resize="none" /></el-form-item></el-col>
+        <el-col :span="12" class="contract-wide-field"><el-form-item label="发票"><div class="editable-complex-clause"><el-select v-model="invoiceTrigger" class="invoice-trigger"><el-option label="甲方支付全款" value="甲方支付全款" /><el-option label="乙方完成交付" value="乙方完成交付" /><el-option label="双方完成对账" value="双方完成对账" /></el-select><span>后</span><el-input-number v-model="invoiceDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内，乙方向甲方开具</span><el-select v-model="invoiceType" class="invoice-type"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></div></el-form-item></el-col>
       </template>
       <el-col :span="24" class="contract-address-table-cell"><el-form-item label="收货地址" required><div class="contract-address-editor">
       <div v-if="!readonly" class="contract-address-toolbar"><el-button type="primary" plain @click="$emit('add-address')">选择客户地址</el-button><span>支持选择多条客户收货地址，至少保留1条</span></div>
@@ -73,12 +73,15 @@ const displayValue = (value) => (value?.value ?? value) || "—";
 </script>
 
 <style scoped>
+.shared-contract-field-grid { width: 100%; }
 .shared-contract-field-grid :deep(.el-input-number), .shared-contract-field-grid :deep(.el-select) { width: 100%; }
+.shared-contract-field-grid :deep(.el-form-item__content) { min-width: 0; }
 .field-unit { margin-left: 8px; color: #7f8c98; white-space: nowrap; }
 .contract-address-editor { width: 100%; }
 .contract-address-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #7f8c98; font-size: 12px; }
-.readonly-contract-value { min-height: 28px; color: #24364b; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
-.settlement-clause { padding: 6px 10px; border-left: 3px solid #8fc7ff; background: #f7faff; }
+.readonly-contract-value { width: 100%; min-height: 28px; color: #24364b; font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.settlement-clause { padding: 0; border: 0; background: transparent; }
+.settlement-clause strong { color: #172b4d; font-weight: 700; }
 .editable-settlement-clause { width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #425466; line-height: 32px; }
 .editable-settlement-clause .clause-trigger { width: 180px; }
 .editable-settlement-clause .clause-number { width: 88px; }
@@ -91,4 +94,13 @@ const displayValue = (value) => (value?.value ?? value) || "—";
 .editable-complex-clause .clause-number { width: 88px; }
 .editable-complex-clause .clause-method { width: 112px; }
 .editable-complex-clause .clause-wide-text { width: 240px; }
+@media (max-width: 1180px) {
+  .shared-contract-field-grid > .el-col { max-width: 50%; flex-basis: 50%; }
+  .shared-contract-field-grid > .contract-wide-field,
+  .shared-contract-field-grid > .contract-full-field,
+  .shared-contract-field-grid > .contract-address-table-cell { max-width: 100%; flex-basis: 100%; }
+}
+@media (max-width: 760px) {
+  .shared-contract-field-grid > .el-col { max-width: 100%; flex-basis: 100%; }
+}
 </style>
