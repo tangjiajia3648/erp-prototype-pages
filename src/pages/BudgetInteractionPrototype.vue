@@ -4390,8 +4390,8 @@
         >
           <article id="order-basic" class="section-card">
             <SectionTitle number="01" title="基础信息" /><el-form label-position="top"
-              ><div class="subsection-heading">业务信息</div>
-              <p v-if="!orderPageReadonly" class="order-auto-source-tip">选择关联预算单、合同及{{ orderDraft.partyLabel }}后，系统自动带出责任人、组织和结算信息；业务标签允许按实际业务调整，具体取值沿用正式逻辑。</p>
+             ><div class="subsection-heading">业务归属</div>
+              <p v-if="!orderPageReadonly" class="order-auto-source-tip">选择关联预算单、合同、{{ orderDraft.partyLabel }}及{{ orderDraft.ownerLabel }}后，系统自动带出组织和结算信息；业务标签允许按实际业务调整，具体取值沿用正式逻辑。</p>
               <el-row :gutter="16" class="order-field-grid"
                  ><el-col :span="6"><el-form-item label="业务类型" required
                     ><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderBusinessTypeDisplay }}</div
@@ -4417,17 +4417,15 @@
                   ><div v-else class="linked-document-control"><el-select v-model="orderDraft.ownerName" :disabled="orderUsesExistingContract && orderDraft.entrySource !== 'list'" :placeholder="orderDraft.type === 'purchase' ? '请选择责任人' : '请选择业务员'" @change="handleOrderContextChange(orderDraft.ownerLabel)"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /><el-option label="周敏" value="周敏" /><el-option label="王芳" value="王芳" /></el-select></div></el-form-item></el-col
                 ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="采购业务员"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.purchaseSalesman || '—' }}</div><el-select v-else v-model="orderDraft.purchaseSalesman"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /><el-option label="周敏" value="周敏" /></el-select></el-form-item></el-col
                 ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="销售责任人"><el-link v-if="orderPageReadonly" type="primary" :underline="false" class="order-readonly-value link-value document-field-link" @click="openOwnerDetail(orderDraft.responsiblePerson)">{{ orderDraft.responsiblePerson || '—' }}</el-link><el-select v-else v-model="orderDraft.responsiblePerson" placeholder="请选择销售责任人"><el-option label="张晨" value="张晨" /><el-option label="李然" value="李然" /><el-option label="周敏" value="周敏" /><el-option label="王芳" value="王芳" /></el-select></el-form-item></el-col
-                ><el-col v-if="showOrderLaunchParty" :span="6"><el-form-item label="发起方"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.launchParty || '—' }}</div><el-input v-else v-model="orderDraft.launchParty" /></el-form-item></el-col
                  ><el-col v-if="showProjectFollowup" :span="6"><el-form-item label="是否属于项目后返行单"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.projectFollowup ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.projectFollowup" /></el-form-item></el-col
-               ></el-row><el-row :gutter="16" class="order-field-grid order-derived-field-grid"
-                 ><el-col :span="6"><el-form-item label="部门"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.department }}</div><el-input v-else :model-value="orderDraft.department" readonly class="order-derived-input" /></el-form-item></el-col
-                 ><el-col :span="6"><el-form-item label="合同签署主体"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.entity }}</div><el-input v-else :model-value="orderDraft.entity" readonly class="order-derived-input" /></el-form-item></el-col
+               ></el-row><div class="subsection-heading">组织信息</div><el-row :gutter="16" class="order-field-grid order-derived-field-grid"
+                  ><el-col :span="6"><el-form-item label="合同签署主体"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.entity }}</div><el-input v-else :model-value="orderDraft.entity" readonly class="order-derived-input" /></el-form-item></el-col
                  ><el-col :span="6"><el-form-item label="业务单元"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.businessLine }}</div><el-input v-else :model-value="orderDraft.businessLine" readonly class="order-derived-input" /></el-form-item></el-col
                  ><el-col :span="6"><el-form-item label="业务标签"><div v-if="orderPageReadonly" class="business-tag-list"><el-tag v-for="tag in orderDraft.businessTags" :key="tag" type="primary" size="small" effect="light">{{ tag }}</el-tag></div><el-select v-else v-model="orderDraft.businessTags" multiple tag-type="primary" class="business-tag-select"><el-option label="重点业务" value="重点业务" /><el-option label="渠道业务" value="渠道业务" /></el-select></el-form-item></el-col
                  ><el-col v-if="orderDraft.type === 'purchase' && orderDraft.businessType === '产品导向分销'" :span="6"><el-form-item label="华为报量"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.huaweiReport ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.huaweiReport" /></el-form-item></el-col
                  ><el-col v-if="orderDraft.type === 'purchase'" :span="6"><el-form-item label="供应商订单号"><div class="supplier-order-code-summary"><span>{{ orderDraft.supplierOrderCodes[0] || '暂未录入' }}</span><small v-if="orderDraft.supplierOrderCodes.length > 1">共{{ orderDraft.supplierOrderCodes.length }}条</small><el-button link type="primary" @click="openSupplierOrderCodes">{{ orderPageReadonly ? '查看全部' : '修改' }}</el-button></div></el-form-item></el-col
                  ><el-col v-if="orderDraft.type === 'purchase' && ['FA-以销定采', 'FA-囤货分销'].includes(orderDraft.businessType)" :span="6"><el-form-item label="销售周期（天）"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.salesDurationDays || '—' }} 天</div><el-input v-else :model-value="String(orderDraft.salesDurationDays || '')" inputmode="numeric" maxlength="4" placeholder="请输入整数" @input="setOrderDayValue('salesDurationDays', $event)"><template #suffix>天</template></el-input></el-form-item></el-col
-               ></el-row><el-row :gutter="16" class="order-field-grid order-support-field-grid">
+               ></el-row><div class="subsection-heading">附件与说明</div><el-row :gutter="16" class="order-field-grid order-support-field-grid">
               <el-col :span="6"><el-form-item :label="orderDraft.type === 'purchase' ? '付款附件' : '附件'"><div class="order-attachment-field-content"><div v-if="orderAttachmentFiles.length" class="order-attachment-value-row"><el-button link type="primary" @click="orderAttachmentsExpanded = !orderAttachmentsExpanded">已上传{{ orderAttachmentFiles.length }}个 · {{ orderAttachmentsExpanded ? '收起' : '展开' }}</el-button></div><el-upload v-if="!orderPageReadonly" class="inline-attachment-upload" action="#" :auto-upload="false" :show-file-list="false" :limit="10" :file-list="orderAttachmentFiles" :on-change="handleOrderAttachmentChange"
                   ><div class="inline-upload-row"><span class="inline-upload-action"><Upload /><b>上传附件</b></span><span class="inline-upload-help">上限10个，最大100MB/个</span></div></el-upload><div v-if="orderAttachmentFiles.length && orderAttachmentsExpanded" class="supporting-file-list order-attachment-file-list"><div v-for="file in orderAttachmentFiles" :key="file.uid" class="supporting-file-row"><Document /><span :title="file.name">{{ file.name }}</span><small>{{ file.sizeLabel }}</small><el-button link type="primary" @click="ElMessage.info('演示附件，尚未接入真实文件预览')">预览</el-button><el-button v-if="orderPageReadonly" link @click="ElMessage.info('演示附件，暂无真实文件可下载')">下载</el-button><el-button v-else link type="danger" @click="removeOrderAttachmentFile(file)">删除</el-button></div></div><div v-else-if="!orderAttachmentFiles.length" class="supporting-file-empty">暂未上传附件</div></div></el-form-item></el-col>
               <el-col :span="18" class="order-support-note-col"><el-form-item label="补充说明"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.remark || '—' }}</div><el-input v-else v-model="orderDraft.remark" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="请输入补充说明（选填）" /></el-form-item></el-col>
@@ -4479,8 +4477,7 @@
                   ><el-col :span="6"><el-form-item label="价保使用"
                       ><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.priceProtection || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.priceProtection" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="折扣使用"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.discount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.discount" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="自动生成对账单"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.autoSettlement ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.autoSettlement" /></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="自动生成付款草稿"><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.autoPaymentDraft ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.autoPaymentDraft" /></el-form-item></el-col></template
+                   ></template
                 ><template v-else><el-col :span="6"><el-form-item label="回款方式" required><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.paymentMethod === '分阶段付款' ? '分阶段回款' : orderDraft.paymentMethod || '—' }}</div><el-select v-else v-model="orderDraft.paymentMethod" :disabled="orderUsesExistingContract"><el-option label="货到付款" value="货到付款" /><el-option label="款到发货" value="款到发货" /><el-option label="账期结算" value="账期结算" /><el-option label="分阶段回款" value="分阶段付款" /></el-select></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="销售账期（天）" required><div v-if="orderPageReadonly" class="order-readonly-value emphasized-day-value">{{ orderDraft.billTime }} 天</div><el-input v-else-if="orderUsesExistingContract" :model-value="String(orderDraft.billTime)" readonly class="order-derived-input"><template #suffix>天</template></el-input><el-input v-else :model-value="String(orderDraft.billTime)" inputmode="numeric" maxlength="4" placeholder="请输入整数" @input="setOrderDayValue('billTime', $event)"><template #suffix>天</template></el-input></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="发票类型" required><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.invoiceType === '专票' ? '增值税专用发票' : orderDraft.invoiceType === '普票' ? '增值税普通发票' : orderDraft.invoiceType || '—' }}</div><el-select v-else v-model="orderDraft.invoiceType" :disabled="orderUsesExistingContract"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></el-form-item></el-col
@@ -4489,9 +4486,7 @@
                   ><el-col :span="6"><el-form-item label="预收分配到此订单金额"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.prepaymentAllocated || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.prepaymentAllocated" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="返利"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.rebateAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.rebateAmount" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
                   ><el-col :span="6"><el-form-item label="价保"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.priceProtection || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.priceProtection" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="折扣"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.discount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.discount" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="自动生成对账单" required><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.autoSettlement ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.autoSettlement" /></el-form-item></el-col
-                  ><el-col :span="6"><el-form-item label="自动生成收款通知" required><div v-if="orderPageReadonly" class="order-readonly-value">{{ orderDraft.autoReceiptNotice ? '是' : '否' }}</div><el-switch v-else v-model="orderDraft.autoReceiptNotice" /></el-form-item></el-col></template
+                   ><el-col :span="6"><el-form-item label="折扣"><div v-if="orderPageReadonly" class="order-result-value">¥{{ Number(orderDraft.discount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div><el-input-number v-else v-model="orderDraft.discount" :min="0" :precision="2" :controls="false" class="order-money-input" /></el-form-item></el-col></template
               ></el-row
             ></el-form>
           </article>
@@ -4609,12 +4604,27 @@
               <el-form-item label="备注"><div v-if="orderPageReadonly" class="contract-readonly-value">{{ orderDraft.contractRemark || '—' }}</div><el-input v-else v-model="orderDraft.contractRemark" type="textarea" :rows="2" /></el-form-item>
             </el-form>
           </article>
+          <article v-if="orderDraft.type === 'sale'" id="order-auto-tasks" class="section-card order-auto-task-section">
+            <SectionTitle :number="showGeneratedSaleContract ? '05' : '04'" title="后续任务" />
+            <div class="order-auto-task-list">
+              <div class="sale-order-auto-task">
+                <div class="order-auto-task-copy"><strong>自动生成对账单</strong><small>控制订单后续对账单的自动生成</small></div>
+                <el-switch v-if="!orderPageReadonly" v-model="orderDraft.autoSettlement" />
+                <span v-else class="order-readonly-value">{{ orderDraft.autoSettlement ? '已开启' : '未开启' }}</span>
+              </div>
+              <div class="sale-order-auto-task">
+                <div class="order-auto-task-copy"><strong>自动生成收款通知</strong><small>控制订单后续收款通知的自动生成</small></div>
+                <el-switch v-if="!orderPageReadonly" v-model="orderDraft.autoReceiptNotice" />
+                <span v-else class="order-readonly-value">{{ orderDraft.autoReceiptNotice ? '已开启' : '未开启' }}</span>
+              </div>
+            </div>
+          </article>
           <article
             v-if="orderPageReadonly"
             id="order-followup-documents"
             class="section-card order-followup-documents"
           >
-            <SectionTitle :number="showGeneratedSaleContract ? '05' : '04'" title="业务后续单据" />
+            <SectionTitle :number="orderDraft.type === 'sale' ? (showGeneratedSaleContract ? '06' : '05') : '04'" title="业务后续单据" />
             <p class="order-followup-summary">{{ orderDraft.type === 'purchase' ? '付款、结算、收票与退货' : '收款、结算、开票与退货' }}</p>
             <el-tabs v-model="purchaseRelatedTab" class="purchase-related-tabs">
               <template v-if="orderDraft.type === 'purchase'">
@@ -4636,7 +4646,7 @@
             id="order-customer-credit"
             class="section-card customer-credit-section"
           >
-            <SectionTitle :number="showGeneratedSaleContract ? '06' : '05'" title="客户资信信息" />
+            <SectionTitle :number="showGeneratedSaleContract ? '07' : '06'" title="客户资信信息" />
             <CustomerCreditPanel
               :snapshot="activeOrderPage.orderPageMode === 'audit'"
               @inspect="(label) => ElMessage.info(`查看${label}明细`)"
@@ -7673,7 +7683,6 @@ const orderContractOptions = computed(() =>
 const showOrderBudget = computed(() => true);
 const showProjectFollowup = computed(() => orderDraft.businessType === "订单导向分销");
 const showCapitalOccupied = computed(() => ["FA-以销定采", "FA-囤货分销", "B类"].includes(orderDraft.businessType));
-const showOrderLaunchParty = computed(() => orderDraft.businessType === "订单导向分销");
 const orderContractHandlingText = computed(() => {
   if (orderDraft.type !== "sale")
     return showOrderContract.value ? "" : "该业务类型允许仅审核订单，无需合同";
@@ -7752,6 +7761,16 @@ const orderModules = computed(() => [
         },
       ]
     : []),
+  ...(orderDraft.type === "sale"
+    ? [
+        {
+          id: "order-auto-tasks",
+          order: showGeneratedSaleContract.value ? "05" : "04",
+          label: "后续任务",
+          status: "",
+        },
+      ]
+    : []),
   ...(orderPageReadonly.value && orderDraft.type === "purchase"
     ? [
         {
@@ -7766,13 +7785,13 @@ const orderModules = computed(() => [
     ? [
         {
           id: "order-followup-documents",
-          order: showGeneratedSaleContract.value ? "05" : "04",
+          order: showGeneratedSaleContract.value ? "06" : "05",
           label: "业务后续单据",
           status: "已生成",
         },
         {
           id: "order-customer-credit",
-          order: showGeneratedSaleContract.value ? "06" : "05",
+          order: showGeneratedSaleContract.value ? "07" : "06",
           label: "客户资信信息",
           status: "2项异常",
         },
@@ -14776,11 +14795,34 @@ onMounted(() => {
 .order-document-scroll #order-contract-info {
   order: 4;
 }
-.order-document-scroll #order-followup-documents {
+.order-document-scroll #order-auto-tasks {
   order: 5;
 }
-.order-document-scroll #order-customer-credit {
+.order-document-scroll #order-followup-documents {
   order: 6;
+}
+.order-document-scroll #order-customer-credit {
+  order: 7;
+}
+.order-auto-task-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.order-auto-task-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+.order-auto-task-copy small {
+  color: #8a98a8;
+  line-height: 1.5;
+}
+@media (max-width: 1180px) {
+  .order-auto-task-list {
+    grid-template-columns: 1fr;
+  }
 }
 .order-followup-summary {
   margin: -4px 0 12px;
@@ -18669,6 +18711,58 @@ onMounted(() => {
     max-width: 100%;
     flex-basis: 100%;
   }
+}
+
+/* 订单详情与审批采用紧凑只读密度；新建、编辑继续保留原输入空间。 */
+.order-detail-page .section-heading,
+.order-audit-page .section-heading {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+}
+.order-detail-page .subsection-heading,
+.order-audit-page .subsection-heading {
+  min-height: 26px;
+  margin: 14px 0 8px;
+  padding: 2px 0 2px 10px;
+  line-height: 22px;
+}
+.order-detail-page .section-heading + .subsection-heading,
+.order-audit-page .section-heading + .subsection-heading,
+.order-detail-page .section-heading + .el-form .subsection-heading:first-child,
+.order-audit-page .section-heading + .el-form .subsection-heading:first-child {
+  margin-top: 8px;
+}
+.order-detail-page article :deep(.el-form-item),
+.order-audit-page article :deep(.el-form-item),
+.order-detail-page .order-settlement-grid :deep(.el-form-item),
+.order-audit-page .order-settlement-grid :deep(.el-form-item) {
+  display: block;
+  min-height: 0;
+  margin-bottom: 6px;
+  grid-template-rows: none;
+}
+.order-detail-page .order-field-grid :deep(.el-form-item__label),
+.order-audit-page .order-field-grid :deep(.el-form-item__label),
+.order-detail-page .order-settlement-grid :deep(.el-form-item__label),
+.order-audit-page .order-settlement-grid :deep(.el-form-item__label) {
+  display: block;
+  min-height: 18px;
+  margin: 0 0 4px;
+  padding: 0;
+  line-height: 18px;
+}
+.order-detail-page .order-field-grid :deep(.el-form-item__content),
+.order-audit-page .order-field-grid :deep(.el-form-item__content),
+.order-detail-page .order-settlement-grid :deep(.el-form-item__content),
+.order-audit-page .order-settlement-grid :deep(.el-form-item__content) {
+  min-height: 23px;
+  line-height: 23px;
+}
+.order-detail-page .order-derived-field-grid,
+.order-audit-page .order-derived-field-grid,
+.order-detail-page .order-support-field-grid,
+.order-audit-page .order-support-field-grid {
+  margin-top: 0;
 }
 
 </style>
