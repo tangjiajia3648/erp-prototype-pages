@@ -22,11 +22,9 @@
       </template>
       <template v-else>
         <el-col :span="6"><el-form-item label="签约地点"><el-input v-model="signingLocation" /></el-form-item></el-col>
-        <el-col :span="12" class="contract-wide-field"><el-form-item label="交付"><div class="editable-complex-clause"><el-select v-model="deliveryTrigger" class="delivery-trigger"><el-option label="合同生效" value="合同生效" /><el-option label="收到全款" value="收到全款" /><el-option label="收到订单" value="收到订单" /></el-select><span>后</span><el-input-number v-model="deliveryDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内完成交付</span></div></el-form-item></el-col>
-        <el-col :span="12" class="contract-wide-field"><el-form-item label="其他交付要求"><el-input v-model="deliveryRequirement" type="textarea" :rows="2" maxlength="300" show-word-limit resize="none" /></el-form-item></el-col>
-        <el-col :span="24" class="contract-full-field"><el-form-item label="技术支持及服务"><div class="editable-complex-clause"><span>乙方</span><el-select v-model="installationRequired" class="clause-method"><el-option label="需要" value="需要" /><el-option label="不需要" value="不需要" /></el-select><span>提供安装调试，安装调试由</span><el-select v-model="installationProvider" class="clause-method"><el-option label="乙方" value="乙方" /><el-option label="厂商" value="厂商" /><el-option label="第三方" value="第三方" /></el-select><span>提供；质保与售后由</span><el-select v-model="warrantyProvider" class="clause-method"><el-option label="厂商" value="厂商" /><el-option label="乙方" value="乙方" /><el-option label="第三方" value="第三方" /></el-select><span>提供，质保时间与条件</span><el-input v-model="warrantyTerms" class="clause-wide-text" /></div></el-form-item></el-col>
-        <el-col :span="12" class="contract-wide-field"><el-form-item label="其他技术服务要求"><el-input v-model="technicalServiceRemark" type="textarea" :rows="2" maxlength="300" show-word-limit resize="none" /></el-form-item></el-col>
-        <el-col :span="12" class="contract-wide-field"><el-form-item label="发票"><div class="editable-complex-clause"><el-select v-model="invoiceTrigger" class="invoice-trigger"><el-option label="甲方支付全款" value="甲方支付全款" /><el-option label="乙方完成交付" value="乙方完成交付" /><el-option label="双方完成对账" value="双方完成对账" /></el-select><span>后</span><el-input-number v-model="invoiceDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内，乙方向甲方开具</span><el-select v-model="invoiceType" class="invoice-type"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></div></el-form-item></el-col>
+        <el-col :span="24" class="contract-full-field"><el-form-item label="交付"><div class="editable-complex-clause"><el-select v-model="deliveryTrigger" class="delivery-trigger"><el-option label="合同生效" value="合同生效" /><el-option label="收到全款" value="收到全款" /><el-option label="收到订单" value="收到订单" /></el-select><span>后</span><el-input-number v-model="deliveryDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内完成交付；其他交付要求</span><el-input v-model="deliveryRequirement" class="clause-wide-text" maxlength="300" placeholder="无其他要求可不填" /></div></el-form-item></el-col>
+        <el-col :span="24" class="contract-full-field"><el-form-item label="技术支持及服务"><div class="editable-complex-clause technical-clause"><span>安装调试</span><el-select v-model="installationRequired" class="clause-method"><el-option label="需要" value="需要" /><el-option label="不需要" value="不需要" /></el-select><span>，提供方</span><el-select v-model="installationProvider" class="clause-method"><el-option label="乙方" value="乙方" /><el-option label="厂商" value="厂商" /><el-option label="第三方" value="第三方" /></el-select><span>；质保方</span><el-select v-model="warrantyProvider" class="clause-method"><el-option label="厂商" value="厂商" /><el-option label="乙方" value="乙方" /><el-option label="第三方" value="第三方" /></el-select><span>，条件</span><el-input v-model="warrantyTerms" class="clause-wide-text" /><span>；其他要求</span><el-input v-model="technicalServiceRemark" class="clause-wide-text" maxlength="300" placeholder="无其他要求可不填" /></div></el-form-item></el-col>
+        <el-col :span="24" class="contract-full-field"><el-form-item label="发票"><div class="editable-complex-clause"><el-select v-model="invoiceTrigger" class="invoice-trigger"><el-option label="甲方支付全款" value="甲方支付全款" /><el-option label="乙方完成交付" value="乙方完成交付" /><el-option label="双方完成对账" value="双方完成对账" /></el-select><span>后</span><el-input-number v-model="invoiceDays" class="clause-number" :min="0" :max="9999" :controls="false" /><span>日内，乙方向甲方开具</span><el-select v-model="invoiceType" class="invoice-type"><el-option label="增值税专用发票" value="专票" /><el-option label="增值税普通发票" value="普票" /><el-option label="未开票" value="未开票" /></el-select></div></el-form-item></el-col>
       </template>
       <el-col :span="24" class="contract-address-table-cell"><el-form-item label="收货地址" required><div class="contract-address-editor">
       <div v-if="!readonly" class="contract-address-toolbar"><el-button type="primary" plain @click="$emit('add-address')">选择客户地址</el-button><span>支持选择多条客户收货地址，至少保留1条</span></div>
@@ -82,18 +80,24 @@ const displayValue = (value) => (value?.value ?? value) || "—";
 .readonly-contract-value { width: 100%; min-height: 28px; color: #24364b; font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
 .settlement-clause { padding: 0; border: 0; background: transparent; }
 .settlement-clause strong { color: #172b4d; font-weight: 700; }
-.editable-settlement-clause { width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #425466; line-height: 32px; }
-.editable-settlement-clause .clause-trigger { width: 180px; }
-.editable-settlement-clause .clause-number { width: 88px; }
-.editable-settlement-clause .clause-method { width: 118px; }
-.editable-settlement-clause .clause-percent { width: 82px; }
-.editable-complex-clause { width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #425466; line-height: 32px; }
-.editable-complex-clause .delivery-trigger { width: 150px; }
-.editable-complex-clause .invoice-trigger { width: 180px; }
-.editable-complex-clause .invoice-type { width: 180px; }
-.editable-complex-clause .clause-number { width: 88px; }
-.editable-complex-clause .clause-method { width: 112px; }
-.editable-complex-clause .clause-wide-text { width: 240px; }
+.editable-settlement-clause { width: 100%; display: flex; align-items: center; flex-wrap: wrap; column-gap: 8px; row-gap: 10px; color: #425466; line-height: 32px; }
+.editable-settlement-clause > span,
+.editable-settlement-clause > strong { flex: 0 0 auto; white-space: nowrap; }
+.editable-settlement-clause .clause-trigger { width: 180px !important; flex: 0 0 180px; }
+.editable-settlement-clause .clause-number { width: 88px !important; flex: 0 0 88px; }
+.editable-settlement-clause .clause-method { width: 118px !important; flex: 0 0 118px; }
+.editable-settlement-clause .clause-percent { width: 82px !important; flex: 0 0 82px; }
+.editable-complex-clause { width: 100%; display: flex; align-items: center; flex-wrap: wrap; column-gap: 8px; row-gap: 10px; color: #425466; line-height: 32px; }
+.editable-complex-clause > span { flex: 0 0 auto; white-space: nowrap; }
+.editable-complex-clause .delivery-trigger { width: 150px !important; flex: 0 0 150px; }
+.editable-complex-clause .invoice-trigger { width: 180px !important; flex: 0 0 180px; }
+.editable-complex-clause .invoice-type { width: 180px !important; flex: 0 0 180px; }
+.editable-complex-clause .clause-number { width: 88px !important; flex: 0 0 88px; }
+.editable-complex-clause .clause-method { width: 112px !important; flex: 0 0 112px; }
+.editable-complex-clause .clause-wide-text { width: 240px !important; min-width: 180px; flex: 1 1 240px; }
+.editable-complex-clause.technical-clause { column-gap: 6px; }
+.editable-complex-clause.technical-clause .clause-method { width: 88px !important; flex-basis: 88px; }
+.editable-complex-clause.technical-clause .clause-wide-text { width: 130px !important; min-width: 110px; flex: 1 1 130px; }
 @media (max-width: 1180px) {
   .shared-contract-field-grid > .el-col { max-width: 50%; flex-basis: 50%; }
   .shared-contract-field-grid > .contract-wide-field,
